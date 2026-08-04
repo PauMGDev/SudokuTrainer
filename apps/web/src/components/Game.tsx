@@ -14,6 +14,7 @@ import {
   isWon,
   keyToAction,
   peerHighlight,
+  sameDigitCells,
   toWire,
 } from '../lib/game';
 import { Board } from './Board';
@@ -43,6 +44,11 @@ export function Game({ puzzle }: { readonly puzzle: string }) {
   const conflicts = useMemo(() => findConflicts(state.board), [state.board]);
 
   const peers = useMemo(() => peerHighlight(state.selected), [state.selected]);
+
+  const sameDigit = useMemo(
+    () => sameDigitCells(state.board, state.selected),
+    [state.board, state.selected],
+  );
 
   const won = isWon(state.board, conflicts);
 
@@ -127,6 +133,7 @@ export function Game({ puzzle }: { readonly puzzle: string }) {
         selected={state.selected}
         peers={peers}
         hinted={hinted}
+        sameDigit={sameDigit}
         conflicts={conflicts}
         onSelect={handleSelect}
         onKeyDown={handleKeyDown}

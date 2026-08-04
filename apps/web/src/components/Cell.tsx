@@ -21,6 +21,8 @@ interface CellProps {
   readonly peer: boolean;
   /** Forma parte del patrón que señala la última pista. */
   readonly hinted: boolean;
+  /** Lleva el mismo dígito que la celda seleccionada. */
+  readonly sameDigit: boolean;
   /** Repite valor con alguna de sus compañeras de fila, columna o caja. */
   readonly conflict: boolean;
   /** `true` en la única celda tabulable de la rejilla (roving tabindex). */
@@ -68,6 +70,7 @@ export function Cell({
   selected,
   peer,
   hinted,
+  sameDigit,
   conflict,
   tabbable,
   onSelect,
@@ -96,7 +99,15 @@ export function Cell({
         // Excluyentes a propósito: dos utilidades de color en la misma clase no
         // tienen orden garantizado, gana la última definida en la hoja, no la
         // última escrita aquí.
-        conflict ? 'text-danger' : cell.given ? 'text-ink' : 'text-ink-muted',
+        // Los dígitos iguales se marcan en el propio número, no en el fondo:
+        // el fondo ya dice dónde estás y qué comparte unidad contigo.
+        conflict
+          ? 'text-danger'
+          : sameDigit
+            ? 'text-accent'
+            : cell.given
+              ? 'text-ink'
+              : 'text-ink-muted',
         // El peer es contexto, no información: un gris, nunca el acento, o la
         // vista compite con la celda seleccionada.
         conflict ? 'bg-danger/10' : selected ? 'bg-accent/10' : peer ? 'bg-ink/5' : '',

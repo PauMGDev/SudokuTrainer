@@ -28,6 +28,7 @@ import {
   initGame,
   isWon,
   keyToAction,
+  sameDigitCells,
   type GameState,
 } from './game';
 
@@ -131,6 +132,37 @@ describe('deshacer', () => {
   test('sin historial no hace nada', () => {
     const state = start();
     expect(gameReducer(state, { type: 'undo' })).toBe(state);
+  });
+});
+
+describe('dígitos iguales', () => {
+  test('selecciona una celda con valor y salen todas las que lo repiten', () => {
+    const given = puzzle.cells.findIndex((cell) => cell.value !== null);
+    const digit = puzzle.cells[given].value;
+    const state = gameReducer(start(), { type: 'select', index: given });
+
+    const marked = sameDigitCells(state.board, state.selected);
+
+    expect(marked.has(given)).toBe(true);
+    for (const cell of marked) expect(state.board.cells[cell].value).toBe(digit);
+    // Y no se deja ninguna fuera.
+    const total = puzzle.cells.filter((cell) => cell.value === digit).length;
+    expect(marked.size).toBe(total);
+  });
+
+  test('una celda vacía no marca nada: resaltar todos los huecos no dice nada', () => {
+    const state = gameReducer(start(), { type: 'select', index: FIRST_EMPTY });
+
+    expect(sameDigitCells(state.board, state.selected).size).toBe(0);
+    expect(sameDigitCells(state.board, null).size).toBe(0);
+  });
+
+  test('lo que escribe el jugador cuenta igual que una pista', () => {
+    const given = puzzle.cells.findIndex((cell) => cell.value !== null);
+    const digit = puzzle.cells[given].value as Digit;
+    const written = play(start(), FIRST_EMPTY, digit);
+
+    expect(sameDigitCells(written.board, FIRST_EMPTY).has(given)).toBe(true);
   });
 });
 

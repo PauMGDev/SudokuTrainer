@@ -263,6 +263,29 @@ export function explanationFor(hint: Hint | null): Explanation | null {
 const NO_CELLS: ReadonlySet<CellIndex> = new Set();
 
 /**
+ * Todas las celdas que llevan el mismo dígito que la seleccionada, ella
+ * incluida. Es la ayuda que sustituye a rastrear el tablero buscando "dónde
+ * están los demás cuatros": la pregunta que uno se hace en cada técnica.
+ *
+ * Vacío si la celda seleccionada está vacía — resaltar "todos los huecos" no
+ * dice nada.
+ */
+export function sameDigitCells(
+  board: Board,
+  selected: CellIndex | null,
+): ReadonlySet<CellIndex> {
+  if (selected === null) return NO_CELLS;
+  const digit = board.cells[selected].value;
+  if (digit === null) return NO_CELLS;
+
+  const matches = new Set<CellIndex>();
+  for (let index = 0; index < BOARD_SIZE; index += 1) {
+    if (board.cells[index].value === digit) matches.add(index);
+  }
+  return matches;
+}
+
+/**
  * Las 20 compañeras de fila, columna y caja de la celda seleccionada: las que
  * comparten unidad con ella y por tanto no pueden repetir su valor. Es la ayuda
  * visual que sustituye a recorrer la rejilla con el dedo.
