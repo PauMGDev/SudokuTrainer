@@ -1,9 +1,8 @@
 /**
  * Registro de detectores y elección de la siguiente pista.
  *
- * El registro nace vacío: los detectores se van sumando en 2.2–2.5. La
- * infraestructura existe antes que ellos a propósito, para que cada técnica
- * nueva sea solo un fichero más y su test, sin tocar nada de esto.
+ * Cada técnica es un fichero con su detector y su test; aquí solo se dan de
+ * alta. Sumar una técnica nueva no obliga a tocar nada más de este módulo.
  *
  * `detectNext` da siempre la técnica más simple disponible, no la primera que
  * aparezca: enseñar un pointing pair cuando había un naked single a la vista
