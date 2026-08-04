@@ -9,7 +9,9 @@
 import { describe, expect, test } from 'vitest';
 import {
   BOARD_SIZE,
+  TECHNIQUES,
   detectNext,
+  formatRefs,
   generate,
   peersOf,
   toString as boardToString,
@@ -19,6 +21,7 @@ import {
 import { copy } from '../copy';
 
 import {
+  explanationFor,
   findConflicts,
   gameReducer,
   hintMessage,
@@ -172,6 +175,41 @@ describe('pista', () => {
 
   test('sin pista pedida la línea de estado calla', () => {
     expect(hintMessage(null)).toBeNull();
+  });
+});
+
+describe('explicación', () => {
+  test('el panel sale del engine: nombre de técnica y celdas del patrón', () => {
+    const hinted = gameReducer(start(), { type: 'hint' });
+    if (hinted.hint?.kind !== 'found') throw new Error('se esperaba una detección');
+    const explanation = explanationFor(hinted.hint);
+
+    expect(explanation?.name).toBe(
+      copy.explanation.techniques[hinted.hint.detection.technique].name,
+    );
+    expect(explanation?.pattern).toBe(formatRefs(hinted.hint.cells));
+  });
+
+  test('hay copy para todas las técnicas que el engine sabe detectar', () => {
+    // Sumar una técnica al engine tiene que romper aquí, no renderizar un
+    // panel a medias en producción.
+    for (const technique of TECHNIQUES) {
+      expect(copy.explanation.techniques[technique].body.length).toBeGreaterThan(0);
+    }
+  });
+
+  test('sin pista encontrada no hay nada que explicar', () => {
+    expect(explanationFor(null)).toBeNull();
+    expect(explanationFor({ kind: 'conflict' })).toBeNull();
+    expect(gameReducer(start(), { type: 'explain' }).explain).toBe(false);
+  });
+
+  test('escribir y pedir otra pista cierran la explicación abierta', () => {
+    const explained = gameReducer(gameReducer(start(), { type: 'hint' }), { type: 'explain' });
+    expect(explained.explain).toBe(true);
+
+    expect(play(explained, FIRST_EMPTY, 5).explain).toBe(false);
+    expect(gameReducer(explained, { type: 'hint' }).explain).toBe(false);
   });
 });
 

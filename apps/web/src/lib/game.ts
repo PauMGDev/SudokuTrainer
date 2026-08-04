@@ -71,6 +71,12 @@ export interface GameState {
   readonly past: readonly Board[];
   /** `null` mientras el jugador no pide pista, y en cuanto cambia el tablero. */
   readonly hint: Hint | null;
+  /**
+   * El jugador ha pedido el porqué de la pista actual. Separado de `hint` porque
+   * son dos decisiones distintas: mirar dónde, y que te lo expliquen — y en 5.4
+   * solo la segunda cuesta una llamada a la API.
+   */
+  readonly explain: boolean;
 }
 
 export type GameAction =
@@ -80,11 +86,19 @@ export type GameAction =
   | { readonly type: 'input'; readonly digit: Digit | null }
   | { readonly type: 'toggle-notes' }
   | { readonly type: 'undo' }
-  | { readonly type: 'hint' };
+  | { readonly type: 'hint' }
+  | { readonly type: 'explain' };
 
 /** Reconstruye el tablero desde los 81 caracteres que envía el servidor. */
 export function initGame(puzzle: string): GameState {
-  return { board: fromString(puzzle), selected: null, notes: false, past: [], hint: null };
+  return {
+    board: fromString(puzzle),
+    selected: null,
+    notes: false,
+    past: [],
+    hint: null,
+    explain: false,
+  };
 }
 
 /**
@@ -93,7 +107,7 @@ export function initGame(puzzle: string): GameState {
  * ser cierto en cuanto se escribe una celda.
  */
 function withBoard(state: GameState, board: Board): GameState {
-  return { ...state, board, past: [...state.past, state.board], hint: null };
+  return { ...state, board, past: [...state.past, state.board], hint: null, explain: false };
 }
 
 function clamp(value: number): number {
@@ -152,18 +166,33 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'undo': {
       const previous = state.past.at(-1);
       if (previous === undefined) return state;
-      return { ...state, board: previous, past: state.past.slice(0, -1), hint: null };
+      return {
+        ...state,
+        board: previous,
+        past: state.past.slice(0, -1),
+        hint: null,
+        explain: false,
+      };
     }
 
     case 'hint': {
+      // Pedir pista cierra la explicación anterior: era de otra detección.
+      const cleared = { ...state, explain: false };
       // Con un dígito mal puesto, los candidatos que ve el detector son falsos
       // y la pista señalaría un patrón que no existe. Antes se arregla el error.
-      if (findConflicts(state.board).size > 0) return { ...state, hint: { kind: 'conflict' } };
+      if (findConflicts(state.board).size > 0) return { ...cleared, hint: { kind: 'conflict' } };
       const detection = detectNext(state.board);
-      if (detection === null) return { ...state, hint: { kind: 'none' } };
+      if (detection === null) return { ...cleared, hint: { kind: 'none' } };
       // Los refs son la frontera del engine; la rejilla pinta por índice.
       const cells = detection.cells.map(requireRef);
-      return { ...state, hint: { kind: 'found', detection, cells } };
+      return { ...cleared, hint: { kind: 'found', detection, cells } };
+    }
+
+    case 'explain': {
+      // Sin patrón en pantalla no hay nada que explicar: el botón solo existe
+      // dentro de una pista encontrada, y esto lo garantiza también al reducer.
+      if (state.hint?.kind !== 'found') return state;
+      return { ...state, explain: true };
     }
   }
 }
@@ -204,6 +233,25 @@ export function hintMessage(hint: Hint | null): string | null {
   if (hint.kind === 'conflict') return copy.hint.conflict;
   if (hint.kind === 'none') return copy.hint.none;
   return copy.hint.found(formatRefs(hint.cells));
+}
+
+/** Lo que el panel necesita saber de una detección para pintarse. */
+export interface Explanation {
+  readonly name: string;
+  readonly body: string;
+  /** Las celdas del patrón en R#C#, como se nombran al jugador. */
+  readonly pattern: string;
+}
+
+/**
+ * Traduce la detección a lo que se lee en el panel, o `null` si no hay patrón.
+ * El texto de la técnica es mock hasta 5.4; lo que ya es definitivo es de dónde
+ * sale el nombre de la técnica: del engine, nunca escrito a mano en el panel.
+ */
+export function explanationFor(hint: Hint | null): Explanation | null {
+  if (hint?.kind !== 'found') return null;
+  const { name, body } = copy.explanation.techniques[hint.detection.technique];
+  return { name, body, pattern: formatRefs(hint.cells) };
 }
 
 const NO_CELLS: ReadonlySet<CellIndex> = new Set();

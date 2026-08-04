@@ -1,6 +1,7 @@
 import { DIGITS, type Digit } from 'engine';
 
 import { copy } from '../copy';
+import { BUTTON } from './button';
 
 interface KeypadProps {
   /** `null` borra la celda seleccionada, o sus notas en modo notas. */
@@ -12,11 +13,6 @@ interface KeypadProps {
   readonly onHint: () => void;
   readonly disabled: boolean;
 }
-
-const BUTTON =
-  'flex min-h-12 items-center justify-center rounded-sm border border-line font-mono text-lg ' +
-  'tabular-nums transition-colors hover:border-accent-deep active:border-accent active:text-accent ' +
-  'disabled:opacity-40 disabled:hover:border-line';
 
 /**
  * Entrada para dedo y ratón. Diez botones en dos filas de cinco: en un móvil de

@@ -6,6 +6,44 @@
  * hardcodeado disfrazado.
  */
 
+import type { TechniqueId } from 'engine';
+
+/**
+ * Una entrada por técnica que el engine sabe detectar. El tipo `Record` sobre
+ * `TechniqueId` es lo que hace que sumar una técnica en el engine rompa aquí en
+ * compilación en vez de renderizar un panel vacío.
+ *
+ * Los textos son provisionales: en 5.4 los escribe Claude sobre la detección
+ * concreta. Estos hablan de la técnica en abstracto y no nombran ningún dígito,
+ * que es justo lo que el trainer no quiere regalar.
+ */
+const techniques: Readonly<Record<TechniqueId, { readonly name: string; readonly body: string }>> = {
+  'naked-single': {
+    name: 'Naked single',
+    body:
+      "Every other digit already appears in this cell's row, column or box. " +
+      'A single candidate survives, so it is the only thing that fits here.',
+  },
+  'hidden-single': {
+    name: 'Hidden single',
+    body:
+      'Within this unit only one cell can still take that digit: the rest are blocked ' +
+      'by their own row, column or box. The digit belongs to the cell left standing.',
+  },
+  'naked-pair': {
+    name: 'Naked pair',
+    body:
+      'These two cells share a unit and hold the same two candidates, nothing else. ' +
+      'Between them they use both digits up, so no other cell in the unit can take either.',
+  },
+  'pointing-pair': {
+    name: 'Pointing pair',
+    body:
+      'Inside this box the digit only fits in cells that sit on the same line. ' +
+      'Wherever it lands it stays on that line, so it is ruled out of the rest of it.',
+  },
+};
+
 export const copy = {
   meta: {
     title: 'Sudoku Trainer',
@@ -31,6 +69,14 @@ export const copy = {
     found: (refs: string): string => `Look at ${refs}.`,
     conflict: 'Two cells clash. Fix that first.',
     none: 'No technique I know applies here yet.',
+  },
+  explanation: {
+    /** Segundo paso del flujo: el que en 5.4 gasta una llamada a la API. */
+    action: 'Explain',
+    label: 'Explanation',
+    loading: 'Writing the explanation…',
+    pattern: (refs: string): string => `Pattern: ${refs}`,
+    techniques,
   },
   board: {
     label: 'Sudoku board',

@@ -5,6 +5,7 @@ import type { CellIndex, Digit } from 'engine';
 
 import { copy } from '../copy';
 import {
+  explanationFor,
   findConflicts,
   gameReducer,
   hintMessage,
@@ -14,6 +15,8 @@ import {
   peerHighlight,
 } from '../lib/game';
 import { Board } from './Board';
+import { BUTTON } from './button';
+import { Explanation } from './Explanation';
 import { Keypad } from './Keypad';
 
 /**
@@ -32,6 +35,8 @@ export function Game({ puzzle }: { readonly puzzle: string }) {
   const peers = useMemo(() => peerHighlight(state.selected), [state.selected]);
 
   const won = isWon(state.board, conflicts);
+
+  const explanation = explanationFor(state.hint);
 
   const hinted = useMemo(
     () => new Set(state.hint?.kind === 'found' ? state.hint.cells : []),
@@ -56,6 +61,10 @@ export function Game({ puzzle }: { readonly puzzle: string }) {
 
   const handleHint = useCallback(() => {
     dispatch({ type: 'hint' });
+  }, []);
+
+  const handleExplain = useCallback(() => {
+    dispatch({ type: 'explain' });
   }, []);
 
   const handleKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
@@ -105,6 +114,16 @@ export function Game({ puzzle }: { readonly puzzle: string }) {
       <p role="status" className="min-h-5 text-center text-sm text-ink-faint">
         {hintMessage(state.hint) ?? (state.selected === null ? copy.keypad.hint : '')}
       </p>
+      {/* Dos pasos, no uno: la pista dice dónde mirar y solo si el jugador
+          insiste se le explica por qué. En 5.4 este clic es el que cuesta. */}
+      {explanation !== null &&
+        (state.explain ? (
+          <Explanation explanation={explanation} loading={false} />
+        ) : (
+          <button type="button" onClick={handleExplain} className={`${BUTTON} text-base`}>
+            {copy.explanation.action}
+          </button>
+        ))}
     </div>
   );
 }
