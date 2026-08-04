@@ -15,7 +15,7 @@ Pasos pequeños, commits frecuentes. No avanzar de fase con el done anterior en 
 
 ## Fase 2 — Engine: detección de técnicas (fixture-first)
 - [x] 2.1 Infraestructura de detección: interfaz Detector, resultado normalizado (técnica, celdas, candidatos, patrón para caché). Done: un detector dummy pasa por la interfaz.
-- [ ] 2.2 Naked single. 2.3 Hidden single. 2.4 Naked pair. 2.5 Pointing pair.
+- [x] 2.2 Naked single. 2.3 Hidden single. 2.4 Naked pair. 2.5 Pointing pair.
       Cada una: fixture con tablero que la contiene → test → detector. Done: test en verde por técnica.
 - [ ] 2.6 Dificultad del generador (segundo tiempo de 1.3): resolver el tablero generado
       aplicando solo detectores y clasificarlo por la técnica más avanzada que exige,
@@ -81,3 +81,20 @@ repitamos un prompt: es la señal de la siguiente pieza (command, hook, agente).
   el código, la casilla es solo un índice. Señal a vigilar: si vuelve a pasar, el
   ROADMAP necesita que el estado de cada paso sea derivable (o un hook que compare
   casillas contra HEAD antes de editarlo).
+- 2026-08-04: Primer hook: PreToolUse que bloquea ediciones a ROADMAP.md que
+  desmarquen pasos cerrados en HEAD (fricción ocurrida 2 veces). Diseño: la verdad
+  es HEAD, no el disco; para Edit se simula el resultado; stderr como feedback
+  autocorrectivo al agente. Cierra la escalera anunciada: instrucción (CLAUDE.md)
+  → estructura (tsconfig, TECHNIQUES) → imposición (hook).
+- 2026-08-04 (2.2–2.5): los detectores calculan los candidatos de los valores del
+  tablero, así que una eliminación de naked pair o pointing pair no persiste: el
+  siguiente detector no la ve. Para 2.2–2.5 es correcto (cada detección es cierta
+  sobre el tablero tal cual) y el test de encadenado solo aplica colocaciones. 2.6
+  necesita encadenar eliminaciones, y ahí habrá que pasar estado de candidatos y
+  cambiar la firma de `Detector`. Decidido no adelantarlo: la abstracción se paga
+  cuando hay un segundo consumidor, no cuando se intuye.
+- 2026-08-04 (2.4): ni CLASSIC ni HARD_23 contenían un naked pair. En vez de
+  escribir un tablero a mano, se barrieron semillas del generador hasta encontrar
+  uno (`generate({ seed: 3 })`) y el test verifica que el fixture sigue siendo ese
+  tablero. Misma regla que con HARD_23: los datos verificables se construyen con
+  las herramientas del proyecto, no se recuerdan.
