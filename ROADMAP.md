@@ -31,7 +31,7 @@ Pasos pequeños, commits frecuentes. No avanzar de fase con el done anterior en 
 
 ## Fase 4 — Hint y Explain (frontend)
 - [x] 4.1 Botón Hint: engine detecta siguiente técnica, resaltar celdas del patrón sin revelar valores. Done: hint correcto sobre fixtures.
-- [ ] 4.2 Panel de explicación (UI only, con texto mock). Done: flujo visual completo sin API.
+- [x] 4.2 Panel de explicación (UI only, con texto mock). Done: flujo visual completo sin API.
 
 ## Fase 5 — API /api/explain
 - [ ] 5.1 Route con validación + re-verificación de la detección en servidor. Done: rechaza detecciones inválidas.
@@ -119,6 +119,22 @@ repitamos un prompt: es la señal de la siguiente pieza (command, hook, agente).
   misma regla que en 2.2-2.5: la abstracción se paga con el segundo consumidor.
   Señal a vigilar: si 3.3 (estado de victoria) o 4.1 necesitan la misma lectura,
   `findConflicts` sube al engine con su fixture y su test.
+- 2026-08-04 (4.2): el flujo es de dos pasos —Hint dice dónde mirar, Explain dice por
+  qué— y no uno solo. Por producto (primero piensas, luego te lo cuentan) y por coste:
+  en 5.4 el clic caro es el segundo, así que el rate limit de 5.3 cuenta Explains, no
+  Hints. Consecuencia en el estado: `explain` es un campo aparte de `hint`, y lo apaga
+  todo lo que invalida el patrón (escribir, deshacer, pedir otra pista).
+- 2026-08-04 (4.2): los textos mock viven en un `Record<TechniqueId, ...>` en `copy.ts`
+  y hay un test que recorre `TECHNIQUES` del engine. Motivo: sumar una técnica (X-wing,
+  naked triple) tiene que romper en compilación y en test, no renderizar un panel a
+  medias. Regla aplicada: cuando el engine y la UI comparten un enum, el tipo es el
+  que obliga a actualizar los dos.
+- 2026-08-04 (4.2): el panel se ha verificado por unidad (`explanationFor`, transiciones
+  de estado) pero nadie ha hecho clic en Explain: el smoke test por HTTP solo ve el HTML
+  del servidor, donde el panel todavía no existe. Señal a vigilar: es el segundo paso
+  seguido en que la comprobación real queda en manos de Pau. Si 5.x añade más UI con
+  estados, toca decidir si entra un render test (react-dom/server, sin dependencias
+  nuevas) o se asume que la UI se prueba a mano.
 - 2026-08-04 (4.1): la detección corre en el cliente, no en una route. El invariante
   de 5.1 ("la técnica que envía el cliente se re-verifica en servidor") ya daba por
   hecho que el cliente detecta; lo que había que comprobar era el empaquetado.
