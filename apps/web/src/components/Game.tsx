@@ -4,7 +4,7 @@ import { useCallback, useMemo, useReducer, type KeyboardEvent } from 'react';
 import type { CellIndex, Digit } from 'engine';
 
 import { copy } from '../copy';
-import { findConflicts, gameReducer, initGame, keyToAction, peerHighlight } from '../lib/game';
+import { findConflicts, gameReducer, initGame, isWon, keyToAction, peerHighlight } from '../lib/game';
 import { Board } from './Board';
 import { Keypad } from './Keypad';
 
@@ -22,6 +22,8 @@ export function Game({ puzzle }: { readonly puzzle: string }) {
   const conflicts = useMemo(() => findConflicts(state.board), [state.board]);
 
   const peers = useMemo(() => peerHighlight(state.selected), [state.selected]);
+
+  const won = isWon(state.board, conflicts);
 
   const handleSelect = useCallback((index: CellIndex) => {
     dispatch({ type: 'select', index });
@@ -49,6 +51,20 @@ export function Game({ puzzle }: { readonly puzzle: string }) {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* La región existe siempre, vacía hasta ganar: un contenedor que aparece
+          de golpe no lo anuncian todos los lectores de pantalla. */}
+      <p
+        role="status"
+        // `sr-only` y no `hidden`: display:none saca la región del árbol de
+        // accesibilidad y entonces el anuncio no llega.
+        className={
+          won
+            ? 'rounded-sm border border-accent bg-accent/10 px-3 py-2 text-center text-sm text-accent'
+            : 'sr-only'
+        }
+      >
+        {won ? copy.game.won : ''}
+      </p>
       <Board
         board={state.board}
         selected={state.selected}

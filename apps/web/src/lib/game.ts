@@ -17,6 +17,7 @@ import {
   fromString,
   getCell,
   isDigit,
+  isSolved,
   peersOf,
   rowOf,
   setCandidates,
@@ -144,6 +145,15 @@ export function findConflicts(board: Board): ReadonlySet<CellIndex> {
     if (peersOf(index).some((peer) => board.cells[peer].value === value)) conflicts.add(index);
   }
   return conflicts;
+}
+
+/**
+ * Partida ganada. El enunciado tiene solución única, así que un tablero lleno y
+ * sin conflictos es esa solución: no hace falta bajarla al cliente para
+ * comprobarlo, y así el jugador no puede leerla del HTML.
+ */
+export function isWon(board: Board, conflicts: ReadonlySet<CellIndex>): boolean {
+  return conflicts.size === 0 && isSolved(board);
 }
 
 const NO_CELLS: ReadonlySet<CellIndex> = new Set();
