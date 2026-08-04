@@ -15,12 +15,17 @@ import {
   UNIT_SIZE,
   colOf,
   fromString,
+  getCell,
+  isDigit,
+  peersOf,
   rowOf,
+  setCellValue,
   toIndex,
   toRef,
   type Board,
   type CellIndex,
   type CellRef,
+  type Digit,
 } from 'engine';
 
 /** Refs R#C# de las 81 celdas por índice. Constante: se calcula una vez al cargar. */
@@ -36,7 +41,9 @@ export interface GameState {
 
 export type GameAction =
   | { readonly type: 'select'; readonly index: CellIndex }
-  | { readonly type: 'move'; readonly drow: number; readonly dcol: number };
+  | { readonly type: 'move'; readonly drow: number; readonly dcol: number }
+  /** `digit: null` borra la celda. */
+  | { readonly type: 'input'; readonly digit: Digit | null };
 
 /** Reconstruye el tablero desde los 81 caracteres que envía el servidor. */
 export function initGame(puzzle: string): GameState {
@@ -63,5 +70,59 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const col = clamp(colOf(state.selected) + action.dcol);
       return gameReducer(state, { type: 'select', index: toIndex(row, col) });
     }
+
+    case 'input': {
+      if (state.selected === null) return state;
+      // `setCellValue` lanza sobre una pista, no devuelve error: el guard va
+      // aquí, una vez, y no en cada handler que pueda escribir.
+      if (getCell(state.board, state.selected).given) return state;
+      const board = setCellValue(state.board, state.selected, action.digit);
+      // El engine devuelve el mismo board si el valor no cambia. Cortar aquí
+      // ahorra un render, y en 3.2 evitará ensuciar el historial de deshacer.
+      if (board === state.board) return state;
+      return { ...state, board };
+    }
   }
+}
+
+/**
+ * Celdas que repiten valor con alguna de sus 20 compañeras de fila, columna o
+ * caja. El engine no exporta validador a propósito (una detección es cierta
+ * sobre el tablero tal cual), así que el conflicto es lectura de la UI.
+ *
+ * Se marcan las dos celdas implicadas, incluida la pista: ver qué pista estás
+ * violando es la mitad de la información.
+ */
+export function findConflicts(board: Board): ReadonlySet<CellIndex> {
+  const conflicts = new Set<CellIndex>();
+  for (let index = 0; index < BOARD_SIZE; index += 1) {
+    const { value } = board.cells[index];
+    if (value === null) continue;
+    if (peersOf(index).some((peer) => board.cells[peer].value === value)) conflicts.add(index);
+  }
+  return conflicts;
+}
+
+const ARROWS: Readonly<Record<string, { drow: number; dcol: number }>> = {
+  ArrowUp: { drow: -1, dcol: 0 },
+  ArrowDown: { drow: 1, dcol: 0 },
+  ArrowLeft: { drow: 0, dcol: -1 },
+  ArrowRight: { drow: 0, dcol: 1 },
+};
+
+const ERASE_KEYS: readonly string[] = ['0', 'Backspace', 'Delete'];
+
+/**
+ * Teclado a acción. Devuelve `null` para todo lo que la rejilla no reclama —
+ * Tab incluido, que es la salida y no se intercepta jamás.
+ */
+export function keyToAction(key: string): GameAction | null {
+  const arrow = ARROWS[key];
+  if (arrow) return { type: 'move', ...arrow };
+
+  const digit = Number(key);
+  if (key.length === 1 && isDigit(digit)) return { type: 'input', digit };
+  if (ERASE_KEYS.includes(key)) return { type: 'input', digit: null };
+
+  return null;
 }

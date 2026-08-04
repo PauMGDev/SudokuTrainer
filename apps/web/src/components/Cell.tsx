@@ -10,6 +10,8 @@ interface CellProps {
   readonly row: number;
   readonly col: number;
   readonly selected: boolean;
+  /** Repite valor con alguna de sus compañeras de fila, columna o caja. */
+  readonly conflict: boolean;
   /** `true` en la única celda tabulable de la rejilla (roving tabindex). */
   readonly tabbable: boolean;
   readonly onSelect: (index: CellIndex) => void;
@@ -34,6 +36,7 @@ export function Cell({
   row,
   col,
   selected,
+  conflict,
   tabbable,
   onSelect,
 }: CellProps) {
@@ -55,8 +58,13 @@ export function Cell({
         // La pista es el dato inmutable: máximo contraste. Lo que pone el jugador
         // se distingue por peso y tono, no por color: el color queda reservado
         // para dónde estás (accent) y qué está mal (danger).
-        cell.given ? 'font-medium text-ink' : 'text-ink-muted',
-        selected ? 'z-10 bg-accent/10 ring-2 ring-inset ring-accent' : '',
+        cell.given ? 'font-medium' : '',
+        // Excluyentes a propósito: dos utilidades de color en la misma clase no
+        // tienen orden garantizado, gana la última definida en la hoja, no la
+        // última escrita aquí.
+        conflict ? 'text-danger' : cell.given ? 'text-ink' : 'text-ink-muted',
+        conflict ? 'bg-danger/10' : selected ? 'bg-accent/10' : '',
+        selected ? 'z-10 ring-2 ring-inset ring-accent' : '',
       ].join(' ')}
     >
       {cell.value ?? ''}
