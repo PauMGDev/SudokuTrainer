@@ -110,11 +110,21 @@ export function Cell({
               : 'text-ink-muted',
         // El peer es contexto, no información: un gris, nunca el acento, o la
         // vista compite con la celda seleccionada.
-        conflict ? 'bg-danger/10' : selected ? 'bg-accent/10' : peer ? 'bg-ink/5' : '',
+        conflict
+          ? 'bg-danger/10'
+          : selected
+            ? 'bg-accent/10'
+            : hinted
+              ? 'bg-accent/15'
+              : peer
+                ? 'bg-ink/5'
+                : '',
         selected ? 'z-10 ring-2 ring-inset ring-accent' : '',
-        // El hint va por `outline` y no por fondo ni `ring`, que ya están
-        // ocupados: así se ve igual sobre una celda seleccionada o en conflicto.
-        hinted ? 'outline-2 -outline-offset-2 outline-dashed outline-accent-deep' : '',
+        // El hint va por `outline` porque el fondo y el `ring` ya están
+        // ocupados: así se sigue viendo sobre la celda seleccionada o en
+        // conflicto. Sólido y en accent, no punteado en accent-deep: pedir
+        // pista y tener que buscar el rastro era el peor de los dos mundos.
+        hinted ? 'z-10 outline-2 -outline-offset-2 outline-accent' : '',
       ].join(' ')}
     >
       {cell.value ?? (notes.length > 0 ? <Notes candidates={cell.candidates} /> : '')}
