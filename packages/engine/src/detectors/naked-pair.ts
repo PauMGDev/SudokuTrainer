@@ -46,8 +46,10 @@ function findInUnit(unit: Unit, candidates: CandidateGrid): Detection[] {
   return detections;
 }
 
-export function findNakedPairs(board: Board): readonly Detection[] {
-  const candidates = candidateGrid(board);
+export function findNakedPairs(
+  board: Board,
+  candidates: CandidateGrid = candidateGrid(board),
+): readonly Detection[] {
   return ALL_UNITS.flatMap((unit) => findInUnit(unit, candidates));
 }
 

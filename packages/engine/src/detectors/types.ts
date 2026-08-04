@@ -13,6 +13,7 @@
 
 import type { Board, Digit } from '../types';
 import type { CellRef } from '../notation';
+import type { CandidateGrid } from './candidates';
 
 /**
  * Técnicas que el engine sabe nombrar, de la más simple a la más avanzada.
@@ -71,6 +72,13 @@ export interface Detection {
 
 export interface Detector {
   readonly technique: TechniqueId;
-  /** Todas las ocurrencias de la técnica en el tablero. Vacío si no hay ninguna. */
-  find(board: Board): readonly Detection[];
+  /**
+   * Todas las ocurrencias de la técnica en el tablero. Vacío si no hay ninguna.
+   *
+   * `candidates` permite pasar una rejilla ya calculada, y sobre todo una que
+   * arrastre eliminaciones anteriores: encadenar técnicas necesita que lo que
+   * descartó un naked pair siga descartado cuando mira el siguiente detector.
+   * Omitida, se calcula de los valores del tablero.
+   */
+  find(board: Board, candidates?: CandidateGrid): readonly Detection[];
 }

@@ -6,14 +6,16 @@
  */
 
 import { BOARD_SIZE, type Board } from '../types';
-import { candidateGrid } from './candidates';
+import { candidateGrid, type CandidateGrid } from './candidates';
 import { createDetection } from './detection';
 import type { Detection, Detector } from './types';
 
 const TECHNIQUE = 'naked-single';
 
-export function findNakedSingles(board: Board): readonly Detection[] {
-  const candidates = candidateGrid(board);
+export function findNakedSingles(
+  board: Board,
+  candidates: CandidateGrid = candidateGrid(board),
+): readonly Detection[] {
   const detections: Detection[] = [];
 
   for (let cell = 0; cell < BOARD_SIZE; cell += 1) {

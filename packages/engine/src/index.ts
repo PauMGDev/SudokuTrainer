@@ -75,6 +75,8 @@ export {
 
 export { createDetection, type DetectionInput } from './detectors/detection';
 
+export { candidateGrid, type CandidateGrid } from './detectors/candidates';
+
 export { DETECTORS, detectAll, detectNext } from './detectors/registry';
 
 export { findNakedSingles, nakedSingleDetector } from './detectors/naked-single';

@@ -12,14 +12,16 @@
 
 import { ALL_UNITS } from '../units';
 import { DIGITS, type Board, type CellIndex } from '../types';
-import { candidateGrid } from './candidates';
+import { candidateGrid, type CandidateGrid } from './candidates';
 import { createDetection } from './detection';
 import type { Detection, Detector } from './types';
 
 const TECHNIQUE = 'hidden-single';
 
-export function findHiddenSingles(board: Board): readonly Detection[] {
-  const candidates = candidateGrid(board);
+export function findHiddenSingles(
+  board: Board,
+  candidates: CandidateGrid = candidateGrid(board),
+): readonly Detection[] {
   const detections: Detection[] = [];
 
   for (const unit of ALL_UNITS) {

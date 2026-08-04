@@ -10,6 +10,7 @@
  */
 
 import type { Board } from '../types';
+import { candidateGrid, type CandidateGrid } from './candidates';
 import { hiddenSingleDetector } from './hidden-single';
 import { nakedPairDetector } from './naked-pair';
 import { nakedSingleDetector } from './naked-single';
@@ -36,9 +37,10 @@ function byDifficulty(detectors: readonly Detector[]): Detector[] {
 export function detectNext(
   board: Board,
   detectors: readonly Detector[] = DETECTORS,
+  candidates: CandidateGrid = candidateGrid(board),
 ): Detection | null {
   for (const detector of byDifficulty(detectors)) {
-    const found = detector.find(board);
+    const found = detector.find(board, candidates);
     if (found.length > 0) return found[0];
   }
   return null;
@@ -52,6 +54,7 @@ export function detectNext(
 export function detectAll(
   board: Board,
   detectors: readonly Detector[] = DETECTORS,
+  candidates: CandidateGrid = candidateGrid(board),
 ): readonly Detection[] {
-  return byDifficulty(detectors).flatMap((detector) => detector.find(board));
+  return byDifficulty(detectors).flatMap((detector) => detector.find(board, candidates));
 }

@@ -9,7 +9,7 @@
 
 import { BOXES, COLUMNS, ROWS, colOf, rowOf, type Unit } from '../units';
 import { DIGITS, type Board, type CellIndex } from '../types';
-import { candidateGrid } from './candidates';
+import { candidateGrid, type CandidateGrid } from './candidates';
 import { createDetection } from './detection';
 import type { Detection, Detector } from './types';
 
@@ -22,8 +22,10 @@ function sharedLine(a: CellIndex, b: CellIndex): Unit | null {
   return null;
 }
 
-export function findPointingPairs(board: Board): readonly Detection[] {
-  const candidates = candidateGrid(board);
+export function findPointingPairs(
+  board: Board,
+  candidates: CandidateGrid = candidateGrid(board),
+): readonly Detection[] {
   const detections: Detection[] = [];
 
   for (const box of BOXES) {
