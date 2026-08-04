@@ -14,11 +14,14 @@ import {
   BOARD_SIZE,
   UNIT_SIZE,
   colOf,
+  detectNext,
+  formatRefs,
   fromString,
   getCell,
   isDigit,
   isSolved,
   peersOf,
+  requireRef,
   rowOf,
   setCandidates,
   setCellValue,
@@ -28,13 +31,31 @@ import {
   type Board,
   type CellIndex,
   type CellRef,
+  type Detection,
   type Digit,
 } from 'engine';
+
+import { copy } from '../copy';
 
 /** Refs R#C# de las 81 celdas por índice. Constante: se calcula una vez al cargar. */
 export const CELL_REFS: readonly CellRef[] = Array.from({ length: BOARD_SIZE }, (_, index) =>
   toRef(index),
 );
+
+/**
+ * Lo que dejó el último Hint. Los tres casos son distintos para el jugador:
+ * hay técnica, hay un dígito mal puesto (y entonces detectar sería mentir), o
+ * el tablero exige algo que el engine todavía no sabe nombrar.
+ */
+export type Hint =
+  | {
+      readonly kind: 'found';
+      readonly detection: Detection;
+      /** Las celdas del patrón como índices: lo que resalta la rejilla. */
+      readonly cells: readonly CellIndex[];
+    }
+  | { readonly kind: 'conflict' }
+  | { readonly kind: 'none' };
 
 export interface GameState {
   readonly board: Board;
@@ -48,6 +69,8 @@ export interface GameState {
    * Sin tope — una partida entera cabe de sobra en memoria.
    */
   readonly past: readonly Board[];
+  /** `null` mientras el jugador no pide pista, y en cuanto cambia el tablero. */
+  readonly hint: Hint | null;
 }
 
 export type GameAction =
@@ -56,16 +79,21 @@ export type GameAction =
   /** `digit: null` borra la celda, o sus notas si el modo notas está activo. */
   | { readonly type: 'input'; readonly digit: Digit | null }
   | { readonly type: 'toggle-notes' }
-  | { readonly type: 'undo' };
+  | { readonly type: 'undo' }
+  | { readonly type: 'hint' };
 
 /** Reconstruye el tablero desde los 81 caracteres que envía el servidor. */
 export function initGame(puzzle: string): GameState {
-  return { board: fromString(puzzle), selected: null, notes: false, past: [] };
+  return { board: fromString(puzzle), selected: null, notes: false, past: [], hint: null };
 }
 
-/** Único camino por el que cambia el tablero, y por tanto el que apila historial. */
+/**
+ * Único camino por el que cambia el tablero, y por tanto el que apila historial.
+ * También tira la pista: un patrón calculado sobre el tablero anterior deja de
+ * ser cierto en cuanto se escribe una celda.
+ */
 function withBoard(state: GameState, board: Board): GameState {
-  return { ...state, board, past: [...state.past, state.board] };
+  return { ...state, board, past: [...state.past, state.board], hint: null };
 }
 
 function clamp(value: number): number {
@@ -124,7 +152,18 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'undo': {
       const previous = state.past.at(-1);
       if (previous === undefined) return state;
-      return { ...state, board: previous, past: state.past.slice(0, -1) };
+      return { ...state, board: previous, past: state.past.slice(0, -1), hint: null };
+    }
+
+    case 'hint': {
+      // Con un dígito mal puesto, los candidatos que ve el detector son falsos
+      // y la pista señalaría un patrón que no existe. Antes se arregla el error.
+      if (findConflicts(state.board).size > 0) return { ...state, hint: { kind: 'conflict' } };
+      const detection = detectNext(state.board);
+      if (detection === null) return { ...state, hint: { kind: 'none' } };
+      // Los refs son la frontera del engine; la rejilla pinta por índice.
+      const cells = detection.cells.map(requireRef);
+      return { ...state, hint: { kind: 'found', detection, cells } };
     }
   }
 }
@@ -154,6 +193,17 @@ export function findConflicts(board: Board): ReadonlySet<CellIndex> {
  */
 export function isWon(board: Board, conflicts: ReadonlySet<CellIndex>): boolean {
   return conflicts.size === 0 && isSolved(board);
+}
+
+/**
+ * Lo que la línea de estado dice de la última pista, o `null` si no hay ninguna.
+ * Nombra celdas, nunca dígitos: el hint dice dónde mirar y 4.2 dirá por qué.
+ */
+export function hintMessage(hint: Hint | null): string | null {
+  if (hint === null) return null;
+  if (hint.kind === 'conflict') return copy.hint.conflict;
+  if (hint.kind === 'none') return copy.hint.none;
+  return copy.hint.found(formatRefs(hint.cells));
 }
 
 const NO_CELLS: ReadonlySet<CellIndex> = new Set();

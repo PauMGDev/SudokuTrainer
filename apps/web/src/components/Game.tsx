@@ -4,7 +4,15 @@ import { useCallback, useMemo, useReducer, type KeyboardEvent } from 'react';
 import type { CellIndex, Digit } from 'engine';
 
 import { copy } from '../copy';
-import { findConflicts, gameReducer, initGame, isWon, keyToAction, peerHighlight } from '../lib/game';
+import {
+  findConflicts,
+  gameReducer,
+  hintMessage,
+  initGame,
+  isWon,
+  keyToAction,
+  peerHighlight,
+} from '../lib/game';
 import { Board } from './Board';
 import { Keypad } from './Keypad';
 
@@ -25,6 +33,11 @@ export function Game({ puzzle }: { readonly puzzle: string }) {
 
   const won = isWon(state.board, conflicts);
 
+  const hinted = useMemo(
+    () => new Set(state.hint?.kind === 'found' ? state.hint.cells : []),
+    [state.hint],
+  );
+
   const handleSelect = useCallback((index: CellIndex) => {
     dispatch({ type: 'select', index });
   }, []);
@@ -39,6 +52,10 @@ export function Game({ puzzle }: { readonly puzzle: string }) {
 
   const handleUndo = useCallback(() => {
     dispatch({ type: 'undo' });
+  }, []);
+
+  const handleHint = useCallback(() => {
+    dispatch({ type: 'hint' });
   }, []);
 
   const handleKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
@@ -69,6 +86,7 @@ export function Game({ puzzle }: { readonly puzzle: string }) {
         board={state.board}
         selected={state.selected}
         peers={peers}
+        hinted={hinted}
         conflicts={conflicts}
         onSelect={handleSelect}
         onKeyDown={handleKeyDown}
@@ -79,10 +97,13 @@ export function Game({ puzzle }: { readonly puzzle: string }) {
         onToggleNotes={handleToggleNotes}
         onUndo={handleUndo}
         canUndo={state.past.length > 0}
+        onHint={handleHint}
         disabled={state.selected === null}
       />
-      <p aria-hidden={state.selected !== null} className="text-center text-sm text-ink-faint">
-        {state.selected === null ? copy.keypad.hint : ' '}
+      {/* Una sola línea para lo que la partida tiene que decir: la pista manda
+          sobre el aviso inicial, que solo existe mientras no has tocado nada. */}
+      <p role="status" className="min-h-5 text-center text-sm text-ink-faint">
+        {hintMessage(state.hint) ?? (state.selected === null ? copy.keypad.hint : '')}
       </p>
     </div>
   );

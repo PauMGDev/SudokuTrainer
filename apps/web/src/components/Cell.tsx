@@ -19,6 +19,8 @@ interface CellProps {
   readonly selected: boolean;
   /** Comparte fila, columna o caja con la celda seleccionada. */
   readonly peer: boolean;
+  /** Forma parte del patrón que señala la última pista. */
+  readonly hinted: boolean;
   /** Repite valor con alguna de sus compañeras de fila, columna o caja. */
   readonly conflict: boolean;
   /** `true` en la única celda tabulable de la rejilla (roving tabindex). */
@@ -65,6 +67,7 @@ export function Cell({
   col,
   selected,
   peer,
+  hinted,
   conflict,
   tabbable,
   onSelect,
@@ -98,6 +101,9 @@ export function Cell({
         // vista compite con la celda seleccionada.
         conflict ? 'bg-danger/10' : selected ? 'bg-accent/10' : peer ? 'bg-ink/5' : '',
         selected ? 'z-10 ring-2 ring-inset ring-accent' : '',
+        // El hint va por `outline` y no por fondo ni `ring`, que ya están
+        // ocupados: así se ve igual sobre una celda seleccionada o en conflicto.
+        hinted ? 'outline-2 -outline-offset-2 outline-dashed outline-accent-deep' : '',
       ].join(' ')}
     >
       {cell.value ?? (notes.length > 0 ? <Notes candidates={cell.candidates} /> : '')}

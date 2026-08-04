@@ -22,6 +22,16 @@ export const copy = {
     /** Se anuncia solo cuando el tablero está lleno y sin conflictos. */
     won: 'Solved. Every cell checks out.',
   },
+  hint: {
+    action: 'Hint',
+    /**
+     * Dice dónde mirar, nunca qué poner: 4.1 resalta el patrón y calla el valor.
+     * La técnica se nombra y se explica en el panel de 4.2.
+     */
+    found: (refs: string): string => `Look at ${refs}.`,
+    conflict: 'Two cells clash. Fix that first.',
+    none: 'No technique I know applies here yet.',
+  },
   board: {
     label: 'Sudoku board',
     /** Lo que anuncia un lector de pantalla al entrar en una celda. */

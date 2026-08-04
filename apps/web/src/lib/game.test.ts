@@ -7,9 +7,26 @@
  */
 
 import { describe, expect, test } from 'vitest';
-import { BOARD_SIZE, generate, toString as boardToString, type Digit } from 'engine';
+import {
+  BOARD_SIZE,
+  detectNext,
+  generate,
+  peersOf,
+  toString as boardToString,
+  type Digit,
+} from 'engine';
 
-import { findConflicts, gameReducer, initGame, isWon, keyToAction, type GameState } from './game';
+import { copy } from '../copy';
+
+import {
+  findConflicts,
+  gameReducer,
+  hintMessage,
+  initGame,
+  isWon,
+  keyToAction,
+  type GameState,
+} from './game';
 
 const KEY = { ctrlKey: false, metaKey: false };
 
@@ -111,6 +128,50 @@ describe('deshacer', () => {
   test('sin historial no hace nada', () => {
     const state = start();
     expect(gameReducer(state, { type: 'undo' })).toBe(state);
+  });
+});
+
+describe('pista', () => {
+  test('señala celdas vacías del tablero y no revela ningún valor', () => {
+    const state = gameReducer(start(), { type: 'hint' });
+
+    expect(state.hint?.kind).toBe('found');
+    if (state.hint?.kind !== 'found') return;
+    expect(state.hint.cells.length).toBeGreaterThan(0);
+    for (const cell of state.hint.cells) {
+      expect(state.board.cells[cell].value).toBeNull();
+    }
+    // El mensaje nombra celdas, nunca dígitos: "Look at R1C3, R5C3."
+    expect(hintMessage(state.hint)).toMatch(/^Look at R\dC\d(, R\dC\d)*\.$/);
+  });
+
+  test('la técnica detectada es la que el engine da como siguiente', () => {
+    const state = gameReducer(start(), { type: 'hint' });
+    if (state.hint?.kind !== 'found') throw new Error('se esperaba una detección');
+
+    expect(state.hint.detection).toEqual(detectNext(state.board));
+  });
+
+  test('con un conflicto en el tablero no se detecta nada', () => {
+    // Un dígito repetido con un peer: los candidatos que vería el detector
+    // serían falsos, así que la pista se niega en vez de mentir.
+    const clash = peersOf(FIRST_EMPTY).flatMap((cell) => puzzle.cells[cell].value ?? [])[0];
+    const state = gameReducer(play(start(), FIRST_EMPTY, clash), { type: 'hint' });
+
+    expect(state.hint).toEqual({ kind: 'conflict' });
+    expect(hintMessage(state.hint)).toBe(copy.hint.conflict);
+  });
+
+  test('escribir borra la pista, porque el patrón deja de ser cierto', () => {
+    const hinted = gameReducer(start(), { type: 'hint' });
+    const written = play(hinted, FIRST_EMPTY, 5);
+
+    expect(written.hint).toBeNull();
+    expect(gameReducer(written, { type: 'undo' }).hint).toBeNull();
+  });
+
+  test('sin pista pedida la línea de estado calla', () => {
+    expect(hintMessage(null)).toBeNull();
   });
 });
 

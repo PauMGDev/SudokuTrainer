@@ -9,6 +9,7 @@ interface KeypadProps {
   readonly onToggleNotes: () => void;
   readonly onUndo: () => void;
   readonly canUndo: boolean;
+  readonly onHint: () => void;
   readonly disabled: boolean;
 }
 
@@ -27,6 +28,7 @@ export function Keypad({
   onToggleNotes,
   onUndo,
   canUndo,
+  onHint,
   disabled,
 }: KeypadProps) {
   return (
@@ -62,9 +64,9 @@ export function Keypad({
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        {/* Ni notas ni deshacer dependen de la selección: el modo se arma antes
-            de elegir celda, y deshacer mira el historial, no dónde estás. */}
+      <div className="grid grid-cols-3 gap-2">
+        {/* Ninguno de los tres depende de la selección: el modo se arma antes de
+            elegir celda, deshacer mira el historial y la pista mira el tablero. */}
         <button
           type="button"
           aria-pressed={notes}
@@ -84,6 +86,9 @@ export function Keypad({
             {copy.keypad.undoGlyph}
           </span>
           {copy.keypad.undo}
+        </button>
+        <button type="button" onClick={onHint} className={`${BUTTON} text-base text-ink-muted`}>
+          {copy.hint.action}
         </button>
       </div>
     </div>

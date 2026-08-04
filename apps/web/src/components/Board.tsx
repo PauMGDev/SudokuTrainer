@@ -10,6 +10,8 @@ interface BoardProps {
   readonly selected: CellIndex | null;
   /** Celdas que comparten fila, columna o caja con la seleccionada. */
   readonly peers: ReadonlySet<CellIndex>;
+  /** Celdas del patrón de la última pista. Vacío si no hay pista en pantalla. */
+  readonly hinted: ReadonlySet<CellIndex>;
   readonly conflicts: ReadonlySet<CellIndex>;
   readonly onSelect: (index: CellIndex) => void;
   readonly onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => void;
@@ -20,7 +22,15 @@ interface BoardProps {
  * contenedor por fila rompería el `grid-cols-9`. `display: contents` resuelve
  * las dos cosas: la semántica ve 9 filas, el layout sigue viendo 81 hijos.
  */
-export function Board({ board, selected, peers, conflicts, onSelect, onKeyDown }: BoardProps) {
+export function Board({
+  board,
+  selected,
+  peers,
+  hinted,
+  conflicts,
+  onSelect,
+  onKeyDown,
+}: BoardProps) {
   const grid = useRef<HTMLDivElement>(null);
 
   // Roving tabindex: la rejilla entera es una sola parada de tabulador, y el
@@ -55,6 +65,7 @@ export function Board({ board, selected, peers, conflicts, onSelect, onKeyDown }
                 col={col}
                 selected={selected === index}
                 peer={peers.has(index)}
+                hinted={hinted.has(index)}
                 conflict={conflicts.has(index)}
                 tabbable={tabbable === index}
                 onSelect={onSelect}
