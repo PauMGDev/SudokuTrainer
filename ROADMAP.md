@@ -37,7 +37,7 @@ Pasos pequeños, commits frecuentes. No avanzar de fase con el done anterior en 
 - [x] 5.1 Route con validación + re-verificación de la detección en servidor. Done: rechaza detecciones inválidas.
 - [x] 5.2 Prisma + Postgres: caché por hash de patrón. Done: segunda petición igual no llama fuera (test/log).
 - [x] 5.3 Rate limit por sesión (cookie, 10/día, 429 amable). Done: petición 11 recibe 429.
-- [ ] 5.4 Integración Anthropic (claude-haiku-4-5, prompt del TASK). Done: explicación real en el panel; grep de ANTHROPIC en bundle cliente vacío.
+- [x] 5.4 Integración Anthropic (claude-haiku-4-5, prompt del TASK). Done: explicación real en el panel; grep de ANTHROPIC en bundle cliente vacío.
 
 ## Fase 6 — Pulido y despliegue
 - [ ] 6.1 Diseño final coherente con paumiquel.com (oscuro, cyan, mono en números), mobile. Done: revisión visual.
@@ -119,6 +119,32 @@ repitamos un prompt: es la señal de la siguiente pieza (command, hook, agente).
   misma regla que en 2.2-2.5: la abstracción se paga con el segundo consumidor.
   Señal a vigilar: si 3.3 (estado de victoria) o 4.1 necesitan la misma lectura,
   `findConflicts` sube al engine con su fixture y su test.
+- 2026-08-04 (5.4): al prompt no viaja el tablero. Solo la detección que el engine
+  encontró y el servidor re-verificó: técnica, celdas, dígitos y conclusión. Motivo:
+  sin los 81 caracteres delante, el modelo no puede resolver aunque quiera, y la regla
+  "el LLM solo redacta" deja de depender de que el prompt lo pida amablemente. Hay un
+  test que falla si el tablero se cuela en el prompt. Decisión de producto asociada: la
+  explicación SÍ nombra dígitos —explicar un naked single sin decir el número no enseña
+  nada—; el que calla el valor es el Hint de 4.1.
+- 2026-08-04 (5.4): sin `ANTHROPIC_API_KEY`, o si la llamada falla, se responde el texto
+  fijo de la técnica en vez de un error. La demo se puede levantar sin clave y un fallo
+  de red no rompe una partida. Contrapartida que costó cara: ese mismo fallback fue lo
+  que ocultó la fricción de abajo.
+- 2026-08-04 (5.4): Next solo carga el `.env` del directorio de la app, y en este
+  monorepo el `.env` vive en la raíz. Consecuencia: en `next dev` no existían ni
+  `ANTHROPIC_API_KEY` ni `DATABASE_URL`, y la app se degradaba en silencio — explicación
+  de reserva y caché caída, con `200 OK` y sin un solo error visible. Se detectó solo
+  porque la verificación miraba el texto devuelto y no el código de estado. Arreglado
+  cargando el `.env` de la raíz desde `next.config.ts` y `prisma.config.ts` (por eso
+  hasta 5.3 había que pasarle `DATABASE_URL` a mano al CLI de Prisma en cada comando).
+  Regla aplicada: cuando hay un fallback silencioso, verificar el contenido, nunca el
+  código de estado — el fallback está diseñado para que el 200 no signifique nada.
+- 2026-08-04 (5.4): calidad medida con tres llamadas reales (~0,003 $) sobre tres
+  técnicas distintas. Los textos son correctos y citan solo celdas de la detección
+  (naked single de R2C4, naked pair de 1/7 en R8C1-R9C2, pointing pair del 5 en la caja
+  2). Señal a vigilar: no hay nada que compruebe automáticamente que el modelo no cita
+  una celda inventada; si eso importa, el chequeo barato es un test que valide la
+  respuesta contra `detection.cells` antes de guardarla en caché.
 - 2026-08-04 (5.3): la cuota cuenta redacciones, no peticiones. Un acierto de caché no
   cuesta nada, así que no descuenta: el contador se toca justo antes de
   `writeExplanation`, que es donde 5.4 gasta dinero de verdad. Consecuencia visible:
