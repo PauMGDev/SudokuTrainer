@@ -61,6 +61,24 @@ export const MULTIPLE_SOLUTIONS = `
   .........
 `;
 
+/**
+ * Contiene un naked pair {7,9} en R8C1 y R9C1, que además comparten caja:
+ * el mismo par se ve desde la columna y desde la caja, con eliminaciones
+ * distintas en cada una. Es `generate({ seed: 3 }).puzzle`, así que es un
+ * tablero real con solución única, no uno escrito a mano.
+ */
+export const NAKED_PAIR = `
+  3..2..4..
+  2...1.3.5
+  ..7..5.9.
+  ....4..7.
+  1.......2
+  ..2.5....
+  5.4..9...
+  ..6..48..
+  .8......6
+`;
+
 /** Dos cincos en la primera fila: no hay ninguna solución posible. */
 export const CONTRADICTORY = `
   55..7....

@@ -12,6 +12,7 @@
 
 import type { Board } from '../types';
 import { hiddenSingleDetector } from './hidden-single';
+import { nakedPairDetector } from './naked-pair';
 import { nakedSingleDetector } from './naked-single';
 import type { Detection, Detector } from './types';
 import { rankOf } from './types';
@@ -20,6 +21,7 @@ import { rankOf } from './types';
 export const DETECTORS: readonly Detector[] = Object.freeze([
   nakedSingleDetector,
   hiddenSingleDetector,
+  nakedPairDetector,
 ]);
 
 function byDifficulty(detectors: readonly Detector[]): Detector[] {

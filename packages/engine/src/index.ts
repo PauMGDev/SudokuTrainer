@@ -81,6 +81,8 @@ export { findNakedSingles, nakedSingleDetector } from './detectors/naked-single'
 
 export { findHiddenSingles, hiddenSingleDetector } from './detectors/hidden-single';
 
+export { findNakedPairs, nakedPairDetector } from './detectors/naked-pair';
+
 export {
   candidatesFor,
   emptyBoard,
