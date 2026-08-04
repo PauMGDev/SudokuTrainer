@@ -8,12 +8,21 @@ Pasos pequeños, commits frecuentes. No avanzar de fase con el done anterior en 
 ## Fase 1 — Engine: núcleo
 - [x] 1.1 Modelo de tablero: tipos (Cell, Board, Candidate), notación R#C#, utilidades de unidades (fila/columna/caja). Done: tipos sin `any`, tests de utilidades en verde.
 - [x] 1.2 Solver por backtracking + contador de soluciones. Done: resuelve fixtures conocidos, detecta multi-solución.
-- [ ] 1.3 Generador con solución única y 3 dificultades (calibradas por técnicas requeridas, no por huecos). Done: test de unicidad sobre N tableros generados.
+- [ ] 1.3 Generador con solución única. Rejilla completa aleatoria + retirada de pistas
+      mientras `hasUniqueSolution` aguante, con semilla para reproducibilidad.
+      Done: test de unicidad sobre N tableros generados.
+      La calibración de dificultad NO va aquí: ver 2.6.
 
 ## Fase 2 — Engine: detección de técnicas (fixture-first)
 - [ ] 2.1 Infraestructura de detección: interfaz Detector, resultado normalizado (técnica, celdas, candidatos, patrón para caché). Done: un detector dummy pasa por la interfaz.
 - [ ] 2.2 Naked single. 2.3 Hidden single. 2.4 Naked pair. 2.5 Pointing pair.
       Cada una: fixture con tablero que la contiene → test → detector. Done: test en verde por técnica.
+- [ ] 2.6 Dificultad del generador (segundo tiempo de 1.3): resolver el tablero generado
+      aplicando solo detectores y clasificarlo por la técnica más avanzada que exige,
+      no por número de huecos. Fácil = solo singles; media = hasta naked pair;
+      difícil = necesita pointing pair. Si no se resuelve con los detectores, se descarta.
+      Done: 3 dificultades, N tableros por dificultad, cada uno resoluble con las técnicas
+      de su nivel y no con las del nivel anterior.
 
 ## Fase 3 — Web: tablero jugable
 - [ ] 3.1 Componente de tablero: render, selección, entrada por teclado y clic. Done: jugable sin lógica de ayuda.
@@ -39,6 +48,10 @@ Pasos pequeños, commits frecuentes. No avanzar de fase con el done anterior en 
 Anotar aquí cada vez que el agente haga algo que el arnés debía impedir, o que
 repitamos un prompt: es la señal de la siguiente pieza (command, hook, agente).
 - 2026-XX-XX: (ejemplo) ...
+- 2026-08-04 (1.2→1.3): 1.3 pedía calibrar dificultad "por técnicas requeridas", pero los
+  detectores no existen hasta la fase 2: el paso era imposible tal y como estaba escrito.
+  Partido en dos tiempos — generador con unicidad en 1.3, calibración en 2.6. Señal a
+  vigilar: pasos cuyo done depende de código de una fase posterior.
 - 2026-08-04 (1.1): el done de fase 1 es `pnpm test` + `pnpm typecheck`. `pnpm build`
   no puede estar en verde hasta que exista `apps/web` (fase 3), porque el script raíz
   filtra por `web`. Volver a exigirlo en 3.1.
