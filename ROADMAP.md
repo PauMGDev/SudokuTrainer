@@ -55,3 +55,29 @@ repitamos un prompt: es la señal de la siguiente pieza (command, hook, agente).
 - 2026-08-04 (1.1): el done de fase 1 es `pnpm test` + `pnpm typecheck`. `pnpm build`
   no puede estar en verde hasta que exista `apps/web` (fase 3), porque el script raíz
   filtra por `web`. Volver a exigirlo en 3.1.
+- 2026-08-04: Evaluado replicar el patrón planificador/implementador (usado en el
+  proyecto ERP profesional) y descartado para este repo. Motivación: el rol de
+  planificación ya lo cubren ROADMAP + /siguiente + modo plan, y el patrón paga
+  con exploración de contexto pesada, que este proyecto no tiene. Regla aplicada:
+  el arnés se dimensiona a la fricción del proyecto, no se transplanta del anterior.
+  Señales que reabrirían la decisión: planes que exijan exploración larga, fallos
+  transversales sistemáticos, contaminación plan/implementación.
+- 2026-08-04: Fixture de 17 pistas escrito de memoria por el agente resultó inválido.
+  Resolución: generar los fixtures con el propio solver (HARD_23 por eliminación de
+  pistas preservando unicidad; MULTIPLE_SOLUTIONS con multiplicidad medida ≥50).
+  Regla aplicada: los datos verificables no se recuerdan, se construyen y verifican
+  con las herramientas del propio proyecto. Bonus: el procedimiento de eliminación
+  es el esqueleto del generador de 1.3.
+- 2026-08-04: Generador cerrado sin niveles de dificultad (aplazados a 2.6, como
+  decidió el roadmap). Validación empírica: 20 semillas producen tableros minimales
+  de 23–27 pistas (media 24,5) — el recuento de pistas no discrimina dificultad,
+  la calibración debe ser por técnicas requeridas. Además: semilla por defecto 0,
+  no aleatoria — en un engine determinista, la aleatoriedad es decisión explícita
+  del llamador (y regala puzzle-del-día y URLs compartibles como features futuras).
+- 2026-08-04 (2.1): el ROADMAP llegó a la sesión con 1.2 y 1.3 desmarcados y el paso
+  2.6 borrado — una edición manual pegó una cabecera antigua encima de la vigente,
+  conservando solo lo añadido al final. /siguiente habría reabierto dos pasos ya
+  cerrados si no se contrasta con el código. Regla aplicada: el estado real lo dice
+  el código, la casilla es solo un índice. Señal a vigilar: si vuelve a pasar, el
+  ROADMAP necesita que el estado de cada paso sea derivable (o un hook que compare
+  casillas contra HEAD antes de editarlo).
