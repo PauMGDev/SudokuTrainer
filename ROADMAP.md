@@ -27,7 +27,7 @@ Pasos pequeños, commits frecuentes. No avanzar de fase con el done anterior en 
 ## Fase 3 — Web: tablero jugable
 - [x] 3.1 Componente de tablero: render, selección, entrada por teclado y clic. Done: jugable sin lógica de ayuda.
 - [x] 3.2 Modo notas, resaltado de fila/columna/caja, deshacer. Done: interacción completa.
-- [ ] 3.3 Nueva partida por dificultad + estado de victoria. Done: partida completa de principio a fin.
+- [x] 3.3 Nueva partida por dificultad + estado de victoria. Done: partida completa de principio a fin.
 
 ## Fase 4 — Hint y Explain (frontend)
 - [ ] 4.1 Botón Hint: engine detecta siguiente técnica, resaltar celdas del patrón sin revelar valores. Done: hint correcto sobre fixtures.
@@ -119,6 +119,27 @@ repitamos un prompt: es la señal de la siguiente pieza (command, hook, agente).
   misma regla que en 2.2-2.5: la abstracción se paga con el segundo consumidor.
   Señal a vigilar: si 3.3 (estado de victoria) o 4.1 necesitan la misma lectura,
   `findConflicts` sube al engine con su fixture y su test.
+- 2026-08-04 (3.3): la partida vive en la URL (`?difficulty=hard&seed=12`) en vez de
+  API route o pool pregenerado. Medido antes de elegir: `generate` cuesta 8–330 ms
+  según nivel, asumible por navegación, así que la página pasa a dinámica y el
+  solver se queda en servidor. Regalo: enlace compartible y recarga sin perder la
+  partida. Detalle que costó una medición: el enlace usa la semilla *encontrada* + 1,
+  no la pedida — pedir un nivel escaso avanza semillas, y `easy&seed=0`, `seed=1` y
+  `seed=bogus` dan los tres el mismo tablero (el de la semilla 4). Regla aplicada:
+  medir el coste antes de elegir la arquitectura, no después.
+- 2026-08-04 (3.3): victoria = tablero lleno y sin conflictos, no comparación con la
+  solución. El enunciado tiene solución única, así que basta — y la solución no baja
+  al cliente, donde se leería del HTML. Señal a vigilar: 4.1 (hint) sí necesita saber
+  el valor correcto; ahí habrá que decidir si viaja al cliente o se queda en servidor.
+- 2026-08-04 (3.3): navegar entre dificultades cambiaba la prop pero no el tablero:
+  `useReducer` inicializa una vez por montaje. Resuelto con `key` en `<Game>`. Fricción
+  del arnés: ningún test lo habría cogido, porque el reducer es correcto — el fallo
+  estaba en el ciclo de vida de React, que los tests de `lib/` no tocan.
+- 2026-08-04 (3.3): Vitest entra en `apps/web`. Motivo: el done era "partida completa
+  de principio a fin" y la victoria no se puede comprobar a mano sin resolver un
+  sudoku entero; el test mete los 56 dígitos de la solución que el generador ya
+  devuelve. Misma regla que con los fixtures de 1.2: lo verificable se construye con
+  las herramientas del proyecto. `pnpm test` raíz pasa a `pnpm -r test`.
 - 2026-08-04 (3.2): coste cero de engine. Las notas ya estaban modeladas desde 1.1
   (`Cell.candidates`, `toggleCandidate`, `setCandidates`) y el resaltado sale de
   `peersOf`, así que 3.2 fue tres commits de UI y ni una línea del engine — el
