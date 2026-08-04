@@ -127,27 +127,45 @@ function popCount(mask: DigitMask): number {
   return count;
 }
 
+/** Orden por defecto en que se prueban los dígitos: ascendente. */
+const ASCENDING: readonly Digit[] = Object.freeze([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
 /**
  * Explora el árbol de soluciones y devuelve cuántas ha encontrado, parando en
  * `limit`. Con `limit = 1` es "resuelve"; con `limit = 2`, "¿es única?".
  * Al alcanzar el tope, `state.values` conserva la última solución hallada.
+ *
+ * `order` fija en qué orden se prueban los dígitos. Con el orden ascendente el
+ * recorrido es determinista; barajado, la primera solución de un tablero vacío
+ * es una rejilla completa aleatoria, que es de donde parte el generador.
  */
-function search(state: SolverState, limit: number, found: number): number {
+function search(
+  state: SolverState,
+  limit: number,
+  found: number,
+  order: readonly Digit[],
+): number {
   const index = selectCell(state);
   if (index === -1) return found + 1;
 
   let total = found;
   const candidates = candidateMask(state, index);
-  for (let digit = 1; digit <= UNIT_SIZE; digit += 1) {
+  for (const digit of order) {
     if ((candidates & bit(digit)) === 0) continue;
 
     place(state, index, digit);
-    total = search(state, limit, total);
+    total = search(state, limit, total, order);
     if (total >= limit) return total;
     undo(state, index, digit);
   }
 
   return total;
+}
+
+function checkOrder(order: readonly Digit[]): void {
+  if (order.length !== UNIT_SIZE || new Set(order).size !== UNIT_SIZE) {
+    throw new RangeError('El orden de dígitos debe ser una permutación del 1 al 9');
+  }
 }
 
 function toBoard(board: Board, state: SolverState): Board {
@@ -162,15 +180,26 @@ function toBoard(board: Board, state: SolverState): Board {
   return Object.freeze({ cells: Object.freeze(cells) });
 }
 
+export interface SolveOptions {
+  /**
+   * Permutación del 1 al 9 con el orden en que probar los dígitos.
+   * Por defecto ascendente, que hace el resultado determinista. El generador
+   * pasa un orden barajado para obtener rejillas completas distintas.
+   */
+  readonly digitOrder?: readonly Digit[];
+}
+
 /**
  * La primera solución del tablero, o `null` si no tiene ninguna.
  * Las celdas que rellena el solver quedan como no-pistas; las pistas del
  * enunciado se conservan tal cual. No muta el tablero recibido.
  */
-export function solve(board: Board): Board | null {
+export function solve(board: Board, options: SolveOptions = {}): Board | null {
+  const order = options.digitOrder ?? ASCENDING;
+  checkOrder(order);
   const state = toState(board);
   if (state === null) return null;
-  if (search(state, 1, 0) === 0) return null;
+  if (search(state, 1, 0, order) === 0) return null;
   return toBoard(board, state);
 }
 
@@ -183,7 +212,7 @@ export function countSolutions(board: Board, limit = 2): number {
   if (limit < 1) throw new RangeError(`El tope de soluciones debe ser al menos 1: ${limit}`);
   const state = toState(board);
   if (state === null) return 0;
-  return search(state, limit, 0);
+  return search(state, limit, 0, ASCENDING);
 }
 
 /** `true` si el tablero tiene exactamente una solución. Es lo que exige un sudoku. */

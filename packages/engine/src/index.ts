@@ -46,7 +46,22 @@ export {
   type UnitKind,
 } from './units';
 
-export { countSolutions, hasUniqueSolution, solve } from './solver';
+export {
+  countSolutions,
+  hasUniqueSolution,
+  solve,
+  type SolveOptions,
+} from './solver';
+
+export {
+  countClues,
+  generate,
+  generateSolution,
+  type GeneratedPuzzle,
+  type GenerateOptions,
+} from './generator';
+
+export { createRandom, type Random } from './random';
 
 export {
   candidatesFor,
