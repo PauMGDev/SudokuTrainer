@@ -54,13 +54,11 @@ export default async function Page(props: PageProps<'/'>) {
       className="mx-auto flex min-h-dvh w-full max-w-lg flex-col justify-center-safe gap-5 p-4
         pb-[max(1rem,env(safe-area-inset-bottom))] sm:gap-6"
     >
-      {/* Mismo patrón que el portfolio: label mono en versalitas, título serif
-          grande, subtítulo mono apagado. */}
-      <header className="flex flex-col gap-3">
-        <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-faint">
-          {copy.app.eyebrow}
-        </p>
-        <h1 className="font-serif text-5xl leading-none sm:text-6xl">{copy.app.title}</h1>
+      {/* Todo en mono: es una app de números, no una portada editorial. */}
+      <header className="flex flex-col gap-2">
+        <h1 className="font-mono text-3xl leading-none tracking-tight sm:text-4xl">
+          {copy.app.title}
+        </h1>
         <p className="font-mono text-sm text-ink-muted">{copy.app.tagline}</p>
       </header>
 

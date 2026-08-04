@@ -11,10 +11,9 @@
   --color-accent-deep: #0e7490; /* cyan-700: estados y enlaces */
   --color-danger: #f87171; /* red-400: conflicto */
 
-  /* Las mismas tres familias del portfolio; las carga `layout.tsx`. */
+  /* Las familias del portfolio que sí usa esta app; las carga `layout.tsx`. */
   --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, 'Courier New', monospace;
-  --font-serif: var(--font-dm-serif), ui-serif, Georgia, serif;
 }
 
 /*

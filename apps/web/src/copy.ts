@@ -50,8 +50,6 @@ export const copy = {
     description: 'A sudoku that names the technique unlocking your next move, and explains it.',
   },
   app: {
-    /** La línea en versalitas sobre el título, como en paumiquel.com. */
-    eyebrow: 'Sudoku · engine + Claude',
     title: 'Sudoku Trainer',
     tagline: 'Learn the technique, not the answer.',
   },
