@@ -15,4 +15,12 @@ export const copy = {
     title: 'Sudoku Trainer',
     tagline: 'Learn the technique, not the answer.',
   },
+  board: {
+    label: 'Sudoku board',
+    /** Lo que anuncia un lector de pantalla al entrar en una celda. */
+    cell: (ref: string, value: number | null, given: boolean): string => {
+      if (value === null) return `${ref}, empty`;
+      return given ? `${ref}, ${value}, clue` : `${ref}, ${value}`;
+    },
+  },
 } as const;
