@@ -79,6 +79,8 @@ export { DETECTORS, detectAll, detectNext } from './detectors/registry';
 
 export { findNakedSingles, nakedSingleDetector } from './detectors/naked-single';
 
+export { findHiddenSingles, hiddenSingleDetector } from './detectors/hidden-single';
+
 export {
   candidatesFor,
   emptyBoard,

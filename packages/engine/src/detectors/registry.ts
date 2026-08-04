@@ -11,12 +11,16 @@
  */
 
 import type { Board } from '../types';
+import { hiddenSingleDetector } from './hidden-single';
 import { nakedSingleDetector } from './naked-single';
 import type { Detection, Detector } from './types';
 import { rankOf } from './types';
 
 /** Detectores activos, en orden de dificultad. */
-export const DETECTORS: readonly Detector[] = Object.freeze([nakedSingleDetector]);
+export const DETECTORS: readonly Detector[] = Object.freeze([
+  nakedSingleDetector,
+  hiddenSingleDetector,
+]);
 
 function byDifficulty(detectors: readonly Detector[]): Detector[] {
   return [...detectors].sort((a, b) => rankOf(a.technique) - rankOf(b.technique));
