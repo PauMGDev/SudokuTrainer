@@ -35,8 +35,12 @@ export function Game({ puzzle }: { readonly puzzle: string }) {
     dispatch({ type: 'toggle-notes' });
   }, []);
 
+  const handleUndo = useCallback(() => {
+    dispatch({ type: 'undo' });
+  }, []);
+
   const handleKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
-    const action = keyToAction(event.key);
+    const action = keyToAction(event);
     if (action === null) return;
     // Sin esto las flechas hacen scroll de la página bajo el tablero.
     event.preventDefault();
@@ -57,6 +61,8 @@ export function Game({ puzzle }: { readonly puzzle: string }) {
         onInput={handleInput}
         notes={state.notes}
         onToggleNotes={handleToggleNotes}
+        onUndo={handleUndo}
+        canUndo={state.past.length > 0}
         disabled={state.selected === null}
       />
       <p aria-hidden={state.selected !== null} className="text-center text-sm text-ink-faint">

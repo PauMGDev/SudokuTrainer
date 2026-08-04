@@ -33,5 +33,7 @@ export const copy = {
     notes: 'Notes',
     /** La tecla que hace lo mismo que el botón, para quien juega con teclado. */
     notesKey: 'N',
+    undo: 'Undo',
+    undoGlyph: '↶',
   },
 } as const;

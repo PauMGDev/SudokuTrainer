@@ -7,6 +7,8 @@ interface KeypadProps {
   readonly onInput: (digit: Digit | null) => void;
   readonly notes: boolean;
   readonly onToggleNotes: () => void;
+  readonly onUndo: () => void;
+  readonly canUndo: boolean;
   readonly disabled: boolean;
 }
 
@@ -19,7 +21,14 @@ const BUTTON =
  * Entrada para dedo y ratón. Diez botones en dos filas de cinco: en un móvil de
  * 375 px eso da objetivos de ~66 px, mientras que una sola fila de diez daría 34.
  */
-export function Keypad({ onInput, notes, onToggleNotes, disabled }: KeypadProps) {
+export function Keypad({
+  onInput,
+  notes,
+  onToggleNotes,
+  onUndo,
+  canUndo,
+  disabled,
+}: KeypadProps) {
   return (
     <div
       role="group"
@@ -53,16 +62,30 @@ export function Keypad({ onInput, notes, onToggleNotes, disabled }: KeypadProps)
         </button>
       </div>
 
-      {/* El modo notas no depende de la selección: se arma antes de elegir celda. */}
-      <button
-        type="button"
-        aria-pressed={notes}
-        onClick={onToggleNotes}
-        className={`${BUTTON} text-base ${notes ? 'border-accent text-accent' : 'text-ink-muted'}`}
-      >
-        {copy.keypad.notes}
-        <kbd className="ml-2 text-xs text-ink-faint">{copy.keypad.notesKey}</kbd>
-      </button>
+      <div className="grid grid-cols-2 gap-2">
+        {/* Ni notas ni deshacer dependen de la selección: el modo se arma antes
+            de elegir celda, y deshacer mira el historial, no dónde estás. */}
+        <button
+          type="button"
+          aria-pressed={notes}
+          onClick={onToggleNotes}
+          className={`${BUTTON} text-base ${notes ? 'border-accent text-accent' : 'text-ink-muted'}`}
+        >
+          {copy.keypad.notes}
+          <kbd className="ml-2 text-xs text-ink-faint">{copy.keypad.notesKey}</kbd>
+        </button>
+        <button
+          type="button"
+          disabled={!canUndo}
+          onClick={onUndo}
+          className={`${BUTTON} text-base text-ink-muted`}
+        >
+          <span aria-hidden className="mr-2">
+            {copy.keypad.undoGlyph}
+          </span>
+          {copy.keypad.undo}
+        </button>
+      </div>
     </div>
   );
 }

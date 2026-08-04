@@ -41,6 +41,12 @@ export interface GameState {
   readonly selected: CellIndex | null;
   /** Con notas activas, los dígitos se apuntan como candidatos, no se colocan. */
   readonly notes: boolean;
+  /**
+   * Tableros anteriores, del más antiguo al más reciente. Solo el tablero: no
+   * se deshace ni la selección ni el modo, que son dónde estás y no qué hiciste.
+   * Sin tope — una partida entera cabe de sobra en memoria.
+   */
+  readonly past: readonly Board[];
 }
 
 export type GameAction =
@@ -48,11 +54,17 @@ export type GameAction =
   | { readonly type: 'move'; readonly drow: number; readonly dcol: number }
   /** `digit: null` borra la celda, o sus notas si el modo notas está activo. */
   | { readonly type: 'input'; readonly digit: Digit | null }
-  | { readonly type: 'toggle-notes' };
+  | { readonly type: 'toggle-notes' }
+  | { readonly type: 'undo' };
 
 /** Reconstruye el tablero desde los 81 caracteres que envía el servidor. */
 export function initGame(puzzle: string): GameState {
-  return { board: fromString(puzzle), selected: null, notes: false };
+  return { board: fromString(puzzle), selected: null, notes: false, past: [] };
+}
+
+/** Único camino por el que cambia el tablero, y por tanto el que apila historial. */
+function withBoard(state: GameState, board: Board): GameState {
+  return { ...state, board, past: [...state.past, state.board] };
 }
 
 function clamp(value: number): number {
@@ -98,14 +110,20 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           action.digit === null
             ? setCandidates(state.board, state.selected, [])
             : toggleCandidate(state.board, state.selected, action.digit);
-        return { ...state, board };
+        return withBoard(state, board);
       }
 
       const board = setCellValue(state.board, state.selected, action.digit);
       // El engine devuelve el mismo board si el valor no cambia. Cortar aquí
-      // ahorra un render, y en 3.2 evitará ensuciar el historial de deshacer.
+      // ahorra un render y evita ensuciar el historial de deshacer.
       if (board === state.board) return state;
-      return { ...state, board };
+      return withBoard(state, board);
+    }
+
+    case 'undo': {
+      const previous = state.past.at(-1);
+      if (previous === undefined) return state;
+      return { ...state, board: previous, past: state.past.slice(0, -1) };
     }
   }
 }
@@ -149,14 +167,28 @@ const ARROWS: Readonly<Record<string, { drow: number; dcol: number }>> = {
 
 const ERASE_KEYS: readonly string[] = ['0', 'Backspace', 'Delete'];
 
-/** `n` de notes: en minúscula, la comparación normaliza la mayúscula. */
+/** En minúscula: la comparación normaliza la mayúscula. */
 const NOTES_KEY = 'n';
+const UNDO_KEY = 'z';
+
+/** Lo que la rejilla necesita de un evento de teclado, sin depender de React. */
+export interface KeyPress {
+  readonly key: string;
+  readonly ctrlKey: boolean;
+  readonly metaKey: boolean;
+}
 
 /**
  * Teclado a acción. Devuelve `null` para todo lo que la rejilla no reclama —
  * Tab incluido, que es la salida y no se intercepta jamás.
  */
-export function keyToAction(key: string): GameAction | null {
+export function keyToAction({ key, ctrlKey, metaKey }: KeyPress): GameAction | null {
+  // Cmd en Mac, Ctrl en el resto. Con modificador solo se reclama deshacer: los
+  // demás atajos son del navegador y robarlos irrita más de lo que ayuda.
+  if (ctrlKey || metaKey) {
+    return key.toLowerCase() === UNDO_KEY ? { type: 'undo' } : null;
+  }
+
   const arrow = ARROWS[key];
   if (arrow) return { type: 'move', ...arrow };
 
