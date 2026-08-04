@@ -25,7 +25,7 @@ Pasos pequeños, commits frecuentes. No avanzar de fase con el done anterior en 
       de su nivel y no con las del nivel anterior.
 
 ## Fase 3 — Web: tablero jugable
-- [ ] 3.1 Componente de tablero: render, selección, entrada por teclado y clic. Done: jugable sin lógica de ayuda.
+- [x] 3.1 Componente de tablero: render, selección, entrada por teclado y clic. Done: jugable sin lógica de ayuda.
 - [ ] 3.2 Modo notas, resaltado de fila/columna/caja, deshacer. Done: interacción completa.
 - [ ] 3.3 Nueva partida por dificultad + estado de victoria. Done: partida completa de principio a fin.
 
@@ -108,3 +108,22 @@ repitamos un prompt: es la señal de la siguiente pieza (command, hook, agente).
   parten de semillas ya medidas en vez de buscar en cada ejecución.
   Regla aplicada: medir la distribución antes de fijar el criterio de done; el
   plan decía "N tableros por dificultad" sin saber si N era alcanzable.
+- 2026-08-04 (3.1): `pnpm build` verde por primera vez, como reclamaba la nota de
+  1.1. Cerrada esa deuda.
+- 2026-08-04 (3.1): el resaltado de conflictos (mismo dígito que un peer) vive en
+  `apps/web/src/lib/game.ts`, no en el engine, porque el engine no exporta
+  validador: sus detecciones son ciertas sobre el tablero tal cual y nunca dicen
+  "esto está mal". Es la primera grieta en el invariante "toda la lógica de sudoku
+  vive en el engine", y es lógica de sudoku de verdad: una app de escritorio la
+  necesitaría igual y hoy tendría que reescribirla. Decidido no adelantarlo —
+  misma regla que en 2.2-2.5: la abstracción se paga con el segundo consumidor.
+  Señal a vigilar: si 3.3 (estado de victoria) o 4.1 necesitan la misma lectura,
+  `findConflicts` sube al engine con su fixture y su test.
+- 2026-08-04 (3.1): el agente ui-dev tiene prohibido tocar `packages/engine`, pero
+  el primer consumidor real destapó que al paquete le faltaba `"sideEffects": false`
+  y sin eso el solver de backtracking cruzaba al bundle del navegador. La regla
+  del agente cubre la lógica; esto era empaquetado, y hubo que escalar a Pau.
+  Señal a vigilar: si vuelve a pasar, la regla debería decir "no tocas el código
+  del engine" en vez de "no tocas packages/engine", que también prohíbe su
+  manifiesto. Verificación añadida al done de web: grep de `countSolutions` sobre
+  `.next/static/` debe salir vacío — el mismo gesto que pedirá 5.4 con ANTHROPIC.
