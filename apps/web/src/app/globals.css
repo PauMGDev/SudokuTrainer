@@ -10,6 +10,23 @@
   --color-accent: #22d3ee; /* cyan-400: selección, foco, acción */
   --color-accent-deep: #0e7490; /* cyan-700: estados y enlaces */
   --color-danger: #f87171; /* red-400: conflicto */
+
+  /* Las mismas tres familias del portfolio; las carga `layout.tsx`. */
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, 'Courier New', monospace;
+  --font-serif: var(--font-dm-serif), ui-serif, Georgia, serif;
+}
+
+/*
+ * El anillo de foco de la rejilla es suyo (roving tabindex, ver Board.tsx).
+ * Esto es para todo lo demás: enlaces y botones tenían el foco del navegador,
+ * que sobre fondo casi negro apenas se ve.
+ */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
 }
 
 /*

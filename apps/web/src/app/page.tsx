@@ -25,9 +25,13 @@ function toSeed(param: Param): number {
   return Number.isInteger(seed) && seed >= 0 ? seed : 0;
 }
 
+/**
+ * El mismo enlace del portfolio: borde tenue, mono, y el cyan reservado para
+ * el hover y el estado activo. 44 px de alto — el mínimo táctil cómodo.
+ */
 const LINK =
-  'flex min-h-9 items-center justify-center rounded-sm border border-line px-3 text-sm ' +
-  'transition-colors hover:border-accent-deep';
+  'flex min-h-11 items-center justify-center rounded-sm border border-line px-4 font-mono text-sm ' +
+  'transition-all duration-300 hover:border-accent hover:text-accent';
 
 export default async function Page(props: PageProps<'/'>) {
   const params = await props.searchParams;
@@ -43,9 +47,14 @@ export default async function Page(props: PageProps<'/'>) {
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-lg flex-col justify-center gap-6 p-4">
-      <header className="flex flex-col gap-1">
-        <h1 className="font-mono text-xl tracking-tight">{copy.app.title}</h1>
-        <p className="text-sm text-ink-muted">{copy.app.tagline}</p>
+      {/* Mismo patrón que el portfolio: label mono en versalitas, título serif
+          grande, subtítulo mono apagado. */}
+      <header className="flex flex-col gap-3">
+        <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-faint">
+          {copy.app.eyebrow}
+        </p>
+        <h1 className="font-serif text-5xl leading-none sm:text-6xl">{copy.app.title}</h1>
+        <p className="font-mono text-sm text-ink-muted">{copy.app.tagline}</p>
       </header>
 
       <nav aria-label={copy.game.difficultyLabel} className="flex flex-wrap gap-2">

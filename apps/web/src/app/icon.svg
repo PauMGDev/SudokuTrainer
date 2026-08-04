@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Una caja 3x3 con una celda resuelta: el gesto del producto, no un icono
+       genérico de sudoku. Colores del tema, sin dependencias de fuente. -->
+  <rect width="32" height="32" rx="4" fill="#09090b" />
+  <rect x="19" y="5" width="8" height="8" fill="#22d3ee" />
+  <g stroke="#27272a" stroke-width="2">
+    <path d="M5 5h22v22H5z" fill="none" />
+    <path d="M12.3 5v22M19.7 5v22M5 12.3h22M5 19.7h22" />
+  </g>
+</svg>

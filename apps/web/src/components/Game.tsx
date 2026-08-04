@@ -142,7 +142,7 @@ export function Game({ puzzle }: { readonly puzzle: string }) {
       />
       {/* Una sola línea para lo que la partida tiene que decir: la pista manda
           sobre el aviso inicial, que solo existe mientras no has tocado nada. */}
-      <p role="status" className="min-h-5 text-center text-sm text-ink-faint">
+      <p role="status" className="min-h-5 text-center font-mono text-sm text-ink-muted">
         {hintMessage(state.hint) ?? (state.selected === null ? copy.keypad.hint : '')}
       </p>
       {/* Dos pasos, no uno: la pista dice dónde mirar y solo si el jugador

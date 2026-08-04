@@ -20,7 +20,9 @@ export function Explanation({ explanation, body, loading }: ExplanationProps) {
       aria-label={copy.explanation.label}
       className="flex flex-col gap-2 rounded-sm border border-line p-4"
     >
-      <h2 className="font-mono text-sm tracking-tight text-accent">{explanation.name}</h2>
+      <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-accent">
+        {explanation.name}
+      </h2>
       <p className="font-mono text-xs text-ink-faint">
         {copy.explanation.pattern(explanation.pattern)}
       </p>
