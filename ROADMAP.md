@@ -26,7 +26,7 @@ Pasos pequeños, commits frecuentes. No avanzar de fase con el done anterior en 
 
 ## Fase 3 — Web: tablero jugable
 - [x] 3.1 Componente de tablero: render, selección, entrada por teclado y clic. Done: jugable sin lógica de ayuda.
-- [ ] 3.2 Modo notas, resaltado de fila/columna/caja, deshacer. Done: interacción completa.
+- [x] 3.2 Modo notas, resaltado de fila/columna/caja, deshacer. Done: interacción completa.
 - [ ] 3.3 Nueva partida por dificultad + estado de victoria. Done: partida completa de principio a fin.
 
 ## Fase 4 — Hint y Explain (frontend)
@@ -119,6 +119,19 @@ repitamos un prompt: es la señal de la siguiente pieza (command, hook, agente).
   misma regla que en 2.2-2.5: la abstracción se paga con el segundo consumidor.
   Señal a vigilar: si 3.3 (estado de victoria) o 4.1 necesitan la misma lectura,
   `findConflicts` sube al engine con su fixture y su test.
+- 2026-08-04 (3.2): coste cero de engine. Las notas ya estaban modeladas desde 1.1
+  (`Cell.candidates`, `toggleCandidate`, `setCandidates`) y el resaltado sale de
+  `peersOf`, así que 3.2 fue tres commits de UI y ni una línea del engine — el
+  contraste exacto con la grieta de `findConflicts` en 3.1: lo que el engine
+  modeló pronto se cobra tarde, lo que no modeló se paga en la app.
+- 2026-08-04 (3.2): `keyToAction` pasa de recibir `key: string` a un `KeyPress`
+  ({key, ctrlKey, metaKey}) porque deshacer es Cmd/Ctrl+Z. Sigue siendo pura y
+  sin tipos de React: el `KeyboardEvent` de React encaja estructuralmente.
+- 2026-08-04 (3.2): el historial de deshacer guarda tableros enteros, no acciones
+  inversas — 81 celdas congeladas por movimiento, irrelevante para una partida y
+  la mitad de código. Techo conocido: si 3.3 o la fase 4 necesitan reproducir la
+  partida (repetición, telemetría de qué técnica usó el jugador), el historial
+  tendrá que pasar a acciones. No se adelanta: misma regla que en 2.2-2.5.
 - 2026-08-04 (3.1): el agente ui-dev tiene prohibido tocar `packages/engine`, pero
   el primer consumidor real destapó que al paquete le faltaba `"sideEffects": false`
   y sin eso el solver de backtracking cruzaba al bundle del navegador. La regla
