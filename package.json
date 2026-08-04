@@ -12,7 +12,7 @@
     "dev": "pnpm --filter web dev",
     "build": "pnpm run typecheck && pnpm --filter web build",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm --filter engine test",
+    "test": "pnpm -r test",
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
     "db:migrate": "pnpm --filter web db:migrate"
