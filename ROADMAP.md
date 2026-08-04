@@ -14,7 +14,7 @@ Pasos pequeños, commits frecuentes. No avanzar de fase con el done anterior en 
       La calibración de dificultad NO va aquí: ver 2.6.
 
 ## Fase 2 — Engine: detección de técnicas (fixture-first)
-- [ ] 2.1 Infraestructura de detección: interfaz Detector, resultado normalizado (técnica, celdas, candidatos, patrón para caché). Done: un detector dummy pasa por la interfaz.
+- [x] 2.1 Infraestructura de detección: interfaz Detector, resultado normalizado (técnica, celdas, candidatos, patrón para caché). Done: un detector dummy pasa por la interfaz.
 - [ ] 2.2 Naked single. 2.3 Hidden single. 2.4 Naked pair. 2.5 Pointing pair.
       Cada una: fixture con tablero que la contiene → test → detector. Done: test en verde por técnica.
 - [ ] 2.6 Dificultad del generador (segundo tiempo de 1.3): resolver el tablero generado
