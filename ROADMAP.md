@@ -35,7 +35,7 @@ Pasos pequeños, commits frecuentes. No avanzar de fase con el done anterior en 
 
 ## Fase 5 — API /api/explain
 - [x] 5.1 Route con validación + re-verificación de la detección en servidor. Done: rechaza detecciones inválidas.
-- [ ] 5.2 Prisma + Postgres: caché por hash de patrón. Done: segunda petición igual no llama fuera (test/log).
+- [x] 5.2 Prisma + Postgres: caché por hash de patrón. Done: segunda petición igual no llama fuera (test/log).
 - [ ] 5.3 Rate limit por sesión (cookie, 10/día, 429 amable). Done: petición 11 recibe 429.
 - [ ] 5.4 Integración Anthropic (claude-haiku-4-5, prompt del TASK). Done: explicación real en el panel; grep de ANTHROPIC en bundle cliente vacío.
 
@@ -119,6 +119,33 @@ repitamos un prompt: es la señal de la siguiente pieza (command, hook, agente).
   misma regla que en 2.2-2.5: la abstracción se paga con el segundo consumidor.
   Señal a vigilar: si 3.3 (estado de victoria) o 4.1 necesitan la misma lectura,
   `findConflicts` sube al engine con su fixture y su test.
+- 2026-08-04 (5.2): Prisma 7 no es el Prisma que el agente creía saber. `url` está
+  prohibido en el `datasource` del schema, la conexión entra por adaptador
+  (`@prisma/adapter-pg`) desde el código, el CLI lee un `prisma.config.ts` que necesita
+  `dotenv` explícito, y el generator por defecto (`prisma-client`) escribe el cliente
+  en una carpeta del repo en vez de en `node_modules`. Se descubrió reventando, no
+  leyendo. Regla aplicada, la misma que impone el AGENTS.md de Next 16: ante una
+  dependencia con versión mayor reciente, la fuente es el paquete instalado (aquí,
+  `prisma init` en un directorio de usar y tirar), nunca la memoria. Señal a vigilar:
+  esa regla vive solo en `apps/web/AGENTS.md` y solo habla de Next.
+- 2026-08-04 (5.2): tres decisiones pequeñas con su porqué. Una: la clave de caché es
+  la `patternKey` tal cual, no un hash como decía el roadmap — ya es canónica, cabe en
+  un índice y así la caché se lee con `psql` cuando algo salga raro (techo: si aparecen
+  técnicas de cadena con claves largas, sha256). Dos: `db()` es una función perezosa y
+  no un `const`, porque `next build` importa los módulos de las rutas sin base de datos
+  delante y conectarse al importar reventaría la compilación. Tres: `upsert` y no
+  `create` al guardar, porque dos peticiones simultáneas del mismo patrón entran las
+  dos en el camino caro y la segunda no debe morir por clave duplicada.
+- 2026-08-04 (5.2): el test de caché sustituye Postgres por un `Map` y cuenta llamadas a
+  `writeExplanation`. Que Prisma guarde filas es cosa de Prisma; lo que el roadmap pide
+  ("la segunda petición no llama fuera") se mide en el punto donde se paga. Lo real se
+  comprobó a mano: dos `curl` idénticos dan `cached: false` y luego `cached: true`, con
+  una sola fila en la tabla.
+- 2026-08-04 (5.2): `pnpm db:up` no arranca en esta máquina: los puertos 5432 y 5433 ya
+  los ocupan contenedores de otros proyectos de Pau. La migración y la verificación se
+  hicieron contra un Postgres temporal en el 5434, borrado después. Señal a vigilar: el
+  `docker-compose.yml` fija el 5432 sin escapatoria; si vuelve a estorbar, el puerto
+  debería salir de una variable con 5432 por defecto.
 - 2026-08-04 (5.1): del cliente solo viajan `puzzle` y `patternKey`; técnica y celdas
   se derivan de la detección que el servidor reencuentra con `detectAll`. Motivo: lo
   que no viaja no hay que validarlo, y la `patternKey` ya es canónica desde 2.1, así
