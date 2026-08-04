@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Sin "dom" ni "@types/node": el engine no debe poder tocar APIs de plataforma.
+    "lib": ["ES2022"],
+    "types": []
+  },
+  "include": ["src"]
+}

@@ -6,7 +6,7 @@ Forma de trabajo en CADA paso: (1) plan primero y esperar OK, (2) ejecutar,
 Pasos pequeños, commits frecuentes. No avanzar de fase con el done anterior en rojo.
 
 ## Fase 1 — Engine: núcleo
-- [ ] 1.1 Modelo de tablero: tipos (Cell, Board, Candidate), notación R#C#, utilidades de unidades (fila/columna/caja). Done: tipos sin `any`, tests de utilidades en verde.
+- [x] 1.1 Modelo de tablero: tipos (Cell, Board, Candidate), notación R#C#, utilidades de unidades (fila/columna/caja). Done: tipos sin `any`, tests de utilidades en verde.
 - [ ] 1.2 Solver por backtracking + contador de soluciones. Done: resuelve fixtures conocidos, detecta multi-solución.
 - [ ] 1.3 Generador con solución única y 3 dificultades (calibradas por técnicas requeridas, no por huecos). Done: test de unicidad sobre N tableros generados.
 
@@ -39,3 +39,6 @@ Pasos pequeños, commits frecuentes. No avanzar de fase con el done anterior en 
 Anotar aquí cada vez que el agente haga algo que el arnés debía impedir, o que
 repitamos un prompt: es la señal de la siguiente pieza (command, hook, agente).
 - 2026-XX-XX: (ejemplo) ...
+- 2026-08-04 (1.1): el done de fase 1 es `pnpm test` + `pnpm typecheck`. `pnpm build`
+  no puede estar en verde hasta que exista `apps/web` (fase 3), porque el script raíz
+  filtra por `web`. Volver a exigirlo en 3.1.

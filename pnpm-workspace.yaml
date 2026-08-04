@@ -1,3 +1,7 @@
 packages:
   - "packages/*"
   - "apps/*"
+
+# esbuild necesita su script de postinstall para colocar el binario nativo que usa Vitest.
+allowBuilds:
+  esbuild: true

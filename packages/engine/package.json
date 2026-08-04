@@ -1,0 +1,19 @@
+{
+  "name": "engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Motor de sudoku: modelo de tablero, solver y detección de técnicas. TypeScript puro, sin dependencias de plataforma.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
