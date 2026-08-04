@@ -31,6 +31,10 @@ export function Game({ puzzle }: { readonly puzzle: string }) {
     dispatch({ type: 'input', digit });
   }, []);
 
+  const handleToggleNotes = useCallback(() => {
+    dispatch({ type: 'toggle-notes' });
+  }, []);
+
   const handleKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
     const action = keyToAction(event.key);
     if (action === null) return;
@@ -49,7 +53,12 @@ export function Game({ puzzle }: { readonly puzzle: string }) {
         onSelect={handleSelect}
         onKeyDown={handleKeyDown}
       />
-      <Keypad onInput={handleInput} disabled={state.selected === null} />
+      <Keypad
+        onInput={handleInput}
+        notes={state.notes}
+        onToggleNotes={handleToggleNotes}
+        disabled={state.selected === null}
+      />
       <p aria-hidden={state.selected !== null} className="text-center text-sm text-ink-faint">
         {state.selected === null ? copy.keypad.hint : ' '}
       </p>

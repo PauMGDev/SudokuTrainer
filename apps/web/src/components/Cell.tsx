@@ -1,4 +1,11 @@
-import { BOX_SIZE, UNIT_SIZE, type CellIndex, type Cell as CellModel, type CellRef } from 'engine';
+import {
+  BOX_SIZE,
+  DIGITS,
+  UNIT_SIZE,
+  type CellIndex,
+  type Cell as CellModel,
+  type CellRef,
+} from 'engine';
 
 import { copy } from '../copy';
 
@@ -31,6 +38,25 @@ function borders(row: number, col: number): string {
   return `${right} ${bottom}`;
 }
 
+/**
+ * Las notas ocupan la celda entera en una rejilla 3x3 fija: cada dígito cae
+ * siempre en su misma posición, así se leen de un vistazo sin contarlos.
+ */
+function Notes({ candidates }: { readonly candidates: CellModel['candidates'] }) {
+  return (
+    <span
+      aria-hidden
+      className="grid h-full w-full grid-cols-3 self-stretch text-[0.4em] leading-none text-ink-muted"
+    >
+      {DIGITS.map((digit) => (
+        <span key={digit} className="flex items-center justify-center">
+          {candidates.has(digit) ? digit : ''}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 export function Cell({
   cell,
   index,
@@ -43,11 +69,13 @@ export function Cell({
   tabbable,
   onSelect,
 }: CellProps) {
+  const notes = DIGITS.filter((digit) => cell.candidates.has(digit));
+
   return (
     <div
       role="gridcell"
       tabIndex={tabbable ? 0 : -1}
-      aria-label={copy.board.cell(cellRef, cell.value, cell.given)}
+      aria-label={copy.board.cell(cellRef, cell.value, cell.given, notes)}
       aria-readonly={cell.given}
       aria-selected={selected}
       onClick={() => onSelect(index)}
@@ -72,7 +100,7 @@ export function Cell({
         selected ? 'z-10 ring-2 ring-inset ring-accent' : '',
       ].join(' ')}
     >
-      {cell.value ?? ''}
+      {cell.value ?? (notes.length > 0 ? <Notes candidates={cell.candidates} /> : '')}
     </div>
   );
 }

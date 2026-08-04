@@ -18,9 +18,10 @@ export const copy = {
   board: {
     label: 'Sudoku board',
     /** Lo que anuncia un lector de pantalla al entrar en una celda. */
-    cell: (ref: string, value: number | null, given: boolean): string => {
-      if (value === null) return `${ref}, empty`;
-      return given ? `${ref}, ${value}, clue` : `${ref}, ${value}`;
+    cell: (ref: string, value: number | null, given: boolean, notes: readonly number[]): string => {
+      if (value !== null) return given ? `${ref}, ${value}, clue` : `${ref}, ${value}`;
+      if (notes.length > 0) return `${ref}, notes ${notes.join(' ')}`;
+      return `${ref}, empty`;
     },
   },
   keypad: {
@@ -29,5 +30,8 @@ export const copy = {
     eraseGlyph: '⌫',
     erase: 'Erase cell',
     hint: 'Pick a cell to start.',
+    notes: 'Notes',
+    /** La tecla que hace lo mismo que el botón, para quien juega con teclado. */
+    notesKey: 'N',
   },
 } as const;

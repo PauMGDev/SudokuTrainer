@@ -19,8 +19,10 @@ import {
   isDigit,
   peersOf,
   rowOf,
+  setCandidates,
   setCellValue,
   toIndex,
+  toggleCandidate,
   toRef,
   type Board,
   type CellIndex,
@@ -37,17 +39,20 @@ export interface GameState {
   readonly board: Board;
   /** `null` hasta que el jugador toca la rejilla por primera vez. */
   readonly selected: CellIndex | null;
+  /** Con notas activas, los dígitos se apuntan como candidatos, no se colocan. */
+  readonly notes: boolean;
 }
 
 export type GameAction =
   | { readonly type: 'select'; readonly index: CellIndex }
   | { readonly type: 'move'; readonly drow: number; readonly dcol: number }
-  /** `digit: null` borra la celda. */
-  | { readonly type: 'input'; readonly digit: Digit | null };
+  /** `digit: null` borra la celda, o sus notas si el modo notas está activo. */
+  | { readonly type: 'input'; readonly digit: Digit | null }
+  | { readonly type: 'toggle-notes' };
 
 /** Reconstruye el tablero desde los 81 caracteres que envía el servidor. */
 export function initGame(puzzle: string): GameState {
-  return { board: fromString(puzzle), selected: null };
+  return { board: fromString(puzzle), selected: null, notes: false };
 }
 
 function clamp(value: number): number {
@@ -71,11 +76,31 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return gameReducer(state, { type: 'select', index: toIndex(row, col) });
     }
 
+    case 'toggle-notes': {
+      return { ...state, notes: !state.notes };
+    }
+
     case 'input': {
       if (state.selected === null) return state;
-      // `setCellValue` lanza sobre una pista, no devuelve error: el guard va
-      // aquí, una vez, y no en cada handler que pueda escribir.
-      if (getCell(state.board, state.selected).given) return state;
+      // `setCellValue` y `setCandidates` lanzan sobre una pista, no devuelven
+      // error: el guard va aquí, una vez, y no en cada handler que escriba.
+      const cell = getCell(state.board, state.selected);
+      if (cell.given) return state;
+
+      if (state.notes) {
+        // Una celda con valor no admite notas: apuntarlas exigiría borrarlo
+        // antes, y borrarlo por sorpresa perdería trabajo del jugador.
+        if (cell.value !== null) return state;
+        // Borrar notas de una celda que no las tiene no cambia nada: cortar
+        // aquí ahorra un render y no ensuciará el historial de deshacer.
+        if (action.digit === null && cell.candidates.size === 0) return state;
+        const board =
+          action.digit === null
+            ? setCandidates(state.board, state.selected, [])
+            : toggleCandidate(state.board, state.selected, action.digit);
+        return { ...state, board };
+      }
+
       const board = setCellValue(state.board, state.selected, action.digit);
       // El engine devuelve el mismo board si el valor no cambia. Cortar aquí
       // ahorra un render, y en 3.2 evitará ensuciar el historial de deshacer.
@@ -124,6 +149,9 @@ const ARROWS: Readonly<Record<string, { drow: number; dcol: number }>> = {
 
 const ERASE_KEYS: readonly string[] = ['0', 'Backspace', 'Delete'];
 
+/** `n` de notes: en minúscula, la comparación normaliza la mayúscula. */
+const NOTES_KEY = 'n';
+
 /**
  * Teclado a acción. Devuelve `null` para todo lo que la rejilla no reclama —
  * Tab incluido, que es la salida y no se intercepta jamás.
@@ -131,6 +159,8 @@ const ERASE_KEYS: readonly string[] = ['0', 'Backspace', 'Delete'];
 export function keyToAction(key: string): GameAction | null {
   const arrow = ARROWS[key];
   if (arrow) return { type: 'move', ...arrow };
+
+  if (key.length === 1 && key.toLowerCase() === NOTES_KEY) return { type: 'toggle-notes' };
 
   const digit = Number(key);
   if (key.length === 1 && isDigit(digit)) return { type: 'input', digit };
