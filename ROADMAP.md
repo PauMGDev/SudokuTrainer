@@ -34,7 +34,7 @@ Pasos pequeños, commits frecuentes. No avanzar de fase con el done anterior en 
 - [x] 4.2 Panel de explicación (UI only, con texto mock). Done: flujo visual completo sin API.
 
 ## Fase 5 — API /api/explain
-- [ ] 5.1 Route con validación + re-verificación de la detección en servidor. Done: rechaza detecciones inválidas.
+- [x] 5.1 Route con validación + re-verificación de la detección en servidor. Done: rechaza detecciones inválidas.
 - [ ] 5.2 Prisma + Postgres: caché por hash de patrón. Done: segunda petición igual no llama fuera (test/log).
 - [ ] 5.3 Rate limit por sesión (cookie, 10/día, 429 amable). Done: petición 11 recibe 429.
 - [ ] 5.4 Integración Anthropic (claude-haiku-4-5, prompt del TASK). Done: explicación real en el panel; grep de ANTHROPIC en bundle cliente vacío.
@@ -119,6 +119,25 @@ repitamos un prompt: es la señal de la siguiente pieza (command, hook, agente).
   misma regla que en 2.2-2.5: la abstracción se paga con el segundo consumidor.
   Señal a vigilar: si 3.3 (estado de victoria) o 4.1 necesitan la misma lectura,
   `findConflicts` sube al engine con su fixture y su test.
+- 2026-08-04 (5.1): del cliente solo viajan `puzzle` y `patternKey`; técnica y celdas
+  se derivan de la detección que el servidor reencuentra con `detectAll`. Motivo: lo
+  que no viaja no hay que validarlo, y la `patternKey` ya es canónica desde 2.1, así
+  que comparar claves ES la re-verificación. Códigos: 400 cuando la forma está mal
+  (JSON, tablero que no son 81 caracteres) y 422 cuando la forma está bien pero la
+  detección no existe en ese tablero — la distinción importa porque en 5.4 solo el
+  422 significa "alguien está manipulando el cliente". Validación escrita a mano con
+  `unknown` + narrowing: 15 líneas frente a una dependencia de esquemas.
+- 2026-08-04 (5.1): la route existe pero el panel todavía NO la llama. Cablearla ahora
+  obligaría a inventar el manejo de errores dos veces, porque 5.3 añade el 429 y 5.4
+  el texto real. Se cablea una sola vez, en 5.4. Señal a vigilar: hay dos piezas de
+  fase 5 sin consumidor (esta route y su contrato); si 5.2 y 5.3 crecen igual, 5.4
+  deja de ser un paso y pasa a ser una integración de tres.
+- 2026-08-04 (5.1): para probar la route con `curl` hacía falta una `patternKey` real y
+  el repo no sabe ejecutar TypeScript suelto (`node --experimental-strip-types` falla
+  con imports del workspace). Salida: un test temporal de vitest dentro del engine que
+  escribe el payload a disco — el mismo truco que la medición de 3.3. Señal a vigilar:
+  tercera vez que hace falta ejecutar TS del engine fuera de un test; si vuelve a pasar,
+  toca un script `pnpm --filter engine exec vitest run` estable o un `scripts/` propio.
 - 2026-08-04 (4.2): el flujo es de dos pasos —Hint dice dónde mirar, Explain dice por
   qué— y no uno solo. Por producto (primero piensas, luego te lo cuentan) y por coste:
   en 5.4 el clic caro es el segundo, así que el rate limit de 5.3 cuenta Explains, no
