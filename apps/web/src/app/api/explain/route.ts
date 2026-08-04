@@ -11,11 +11,17 @@
  * Verificada la detección, la explicación se busca en caché por `patternKey` y
  * solo se redacta si falta. `cached` viaja en la respuesta porque es lo único
  * que hace observable desde fuera que la segunda petición no pagó nada.
+ *
+ * La cuota diaria se descuenta justo antes de redactar, que es donde 5.4 gasta
+ * dinero: los aciertos de caché no consumen nada.
  */
 
 import { detectAll, fromString, type Board } from 'engine';
 
+import { copy } from '../../../copy';
 import { findExplanation, saveExplanation, writeExplanation } from '../../../lib/explanations';
+import { consumeQuota, secondsUntilReset } from '../../../lib/quota';
+import { newSessionId, readSessionId, sessionCookie } from '../../../lib/session';
 
 /** Una `patternKey` real ronda los 80 caracteres; más allá es basura. */
 const MAX_PATTERN_KEY = 200;
@@ -65,12 +71,32 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: 'unknown_detection' }, { status: 422 });
   }
 
+  // La sesión se emite aunque la respuesta salga de caché: sin cookie estable
+  // no hay cuota que valga, y la siguiente petición ya vendrá identificada.
+  const sessionId = readSessionId(request) ?? newSessionId();
+  const headers = { 'set-cookie': sessionCookie(sessionId) };
+
   const cached = await findExplanation(detection.patternKey);
   if (cached !== null) {
-    return Response.json({ technique: cached.technique, explanation: cached.text, cached: true });
+    // Un acierto de caché no gasta cuota: no ha costado nada producirlo.
+    return Response.json(
+      { technique: cached.technique, explanation: cached.text, cached: true },
+      { headers },
+    );
+  }
+
+  const quota = await consumeQuota(sessionId);
+  if (!quota.allowed) {
+    return Response.json(
+      { error: 'daily_limit', message: copy.explanation.limit(quota.limit) },
+      { status: 429, headers: { ...headers, 'retry-after': String(secondsUntilReset()) } },
+    );
   }
 
   const written = await writeExplanation(detection);
   await saveExplanation(detection.patternKey, written);
-  return Response.json({ technique: written.technique, explanation: written.text, cached: false });
+  return Response.json(
+    { technique: written.technique, explanation: written.text, cached: false },
+    { headers },
+  );
 }

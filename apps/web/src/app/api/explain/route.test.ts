@@ -2,16 +2,18 @@
  * La route es una función que recibe un `Request` y devuelve un `Response`: se
  * prueba llamándola, sin levantar servidor ni pedirle nada a Next.
  *
- * La caché se sustituye por un `Map`: lo que interesa comprobar no es que
+ * Caché y cuota se sustituyen por `Map`s: lo que interesa comprobar no es que
  * Postgres guarde filas —eso es de Prisma— sino que la segunda petición del
- * mismo patrón no vuelva a pasar por el camino caro.
+ * mismo patrón no vuelva a pasar por el camino caro, y que la petición 11
+ * rebote.
  */
 
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { detectNext, fromString, generate, toString as boardToString } from 'engine';
+import { detectAll, detectNext, fromString, generate, toString as boardToString } from 'engine';
 
 import { copy } from '../../../copy';
 import * as explanations from '../../../lib/explanations';
+import * as quota from '../../../lib/quota';
 import { POST } from './route';
 
 vi.mock('../../../lib/explanations', async () => {
@@ -33,12 +35,29 @@ vi.mock('../../../lib/explanations', async () => {
   };
 });
 
-/** El `Map` que hace de tabla, para vaciarlo entre tests. */
+vi.mock('../../../lib/quota', async () => {
+  const actual = await vi.importActual<typeof import('../../../lib/quota')>('../../../lib/quota');
+  const used = new Map<string, number>();
+
+  return {
+    ...actual,
+    consumeQuota: vi.fn((sessionId: string, limit: number = actual.dailyLimit()) => {
+      const next = (used.get(sessionId) ?? 0) + 1;
+      used.set(sessionId, next);
+      return Promise.resolve({ allowed: next <= limit, used: next, limit });
+    }),
+    __used: used,
+  };
+});
+
+/** Los `Map`s que hacen de tablas, para vaciarlos entre tests. */
 const store = (explanations as unknown as { __store: Map<string, explanations.Explanation> })
   .__store;
+const used = (quota as unknown as { __used: Map<string, number> }).__used;
 
 beforeEach(() => {
   store.clear();
+  used.clear();
   vi.mocked(explanations.writeExplanation).mockClear();
 });
 
@@ -53,13 +72,39 @@ const other = generate({ seed: 5, difficulty: 'medium' });
 const otherDetection = detectNext(other.puzzle);
 if (otherDetection === null) throw new Error('el segundo fixture debería detectar algo');
 
-function post(body: unknown): Promise<Response> {
+/**
+ * Detecciones distintas de tableros distintos, para gastar cuota sin que la
+ * caché las absorba. Salen del engine, no escritas a mano.
+ */
+const DISTINCT: readonly { puzzle: string; patternKey: string }[] = [
+  ...new Map(
+    // Semillas medidas que dan tableros distintos (3.3): pedir `easy` desde 0 y
+    // desde 1 cae en el mismo, y un patrón repetido saldría de caché sin gastar
+    // cuota, que es justo lo que este test no quiere.
+    [0, 5, 6, 8]
+      .map((seed) => generate({ seed, difficulty: 'easy' }).puzzle)
+      .flatMap((board) => {
+        const wire = boardToString(board);
+        return detectAll(board).map((found) => ({ puzzle: wire, patternKey: found.patternKey }));
+      })
+      .map((payload) => [payload.patternKey, payload] as const),
+  ).values(),
+];
+
+function post(body: unknown, cookie?: string): Promise<Response> {
   return POST(
     new Request('http://localhost/api/explain', {
       method: 'POST',
+      headers: cookie === undefined ? undefined : { cookie },
       body: typeof body === 'string' ? body : JSON.stringify(body),
     }),
   );
+}
+
+/** El valor de la cookie `sid` que la respuesta emite. */
+function sessionOf(response: Response): string {
+  const header = response.headers.get('set-cookie') ?? '';
+  return header.split(';')[0].replace('sid=', '');
 }
 
 describe('POST /api/explain', () => {
@@ -139,5 +184,74 @@ describe('POST /api/explain', () => {
   test('rechaza una clave absurdamente larga sin llegar a detectar', async () => {
     const response = await post({ puzzle: PUZZLE, patternKey: 'a'.repeat(201) });
     expect(response.status).toBe(400);
+  });
+});
+
+describe('cuota diaria', () => {
+  const LIMIT = quota.dailyLimit();
+
+  test('la petición que pasa del tope recibe 429 con Retry-After', async () => {
+    expect(DISTINCT.length).toBeGreaterThan(LIMIT);
+    const cookie = `sid=${crypto.randomUUID()}`;
+
+    for (const payload of DISTINCT.slice(0, LIMIT)) {
+      expect((await post(payload, cookie)).status).toBe(200);
+    }
+
+    const rejected = await post(DISTINCT[LIMIT], cookie);
+    expect(rejected.status).toBe(429);
+    expect(Number(rejected.headers.get('retry-after'))).toBeGreaterThan(0);
+    expect(await rejected.json()).toEqual({
+      error: 'daily_limit',
+      message: copy.explanation.limit(LIMIT),
+    });
+    // Rebotada antes de redactar: el límite protege lo que cuesta.
+    expect(explanations.writeExplanation).toHaveBeenCalledTimes(LIMIT);
+  });
+
+  test('con la cuota agotada, la caché sigue respondiendo', async () => {
+    const cookie = `sid=${crypto.randomUUID()}`;
+    const first = DISTINCT[0];
+
+    await post(first, cookie);
+    for (const payload of DISTINCT.slice(1, LIMIT + 2)) await post(payload, cookie);
+
+    const repeated = await post(first, cookie);
+    expect(repeated.status).toBe(200);
+    expect(await repeated.json()).toMatchObject({ cached: true });
+  });
+
+  test('un acierto de caché no gasta cuota', async () => {
+    const cookie = `sid=${crypto.randomUUID()}`;
+    const payload = DISTINCT[0];
+
+    await post(payload, cookie);
+    await post(payload, cookie);
+    await post(payload, cookie);
+
+    expect(used.get(cookie.replace('sid=', ''))).toBe(1);
+  });
+
+  test('cada sesión tiene su propia cuota', async () => {
+    for (const payload of DISTINCT.slice(0, LIMIT)) await post(payload, 'sid=uno');
+
+    expect((await post(DISTINCT[LIMIT], 'sid=uno')).status).toBe(429);
+    expect((await post(DISTINCT[LIMIT], 'sid=dos')).status).toBe(200);
+  });
+});
+
+describe('cookie de sesión', () => {
+  test('la primera petición emite una sesión nueva', async () => {
+    const response = await post({ puzzle: PUZZLE, patternKey: detection.patternKey });
+    const header = response.headers.get('set-cookie') ?? '';
+
+    expect(sessionOf(response)).toMatch(/^[0-9a-f-]{36}$/);
+    expect(header).toContain('HttpOnly');
+    expect(header).toContain('SameSite=Lax');
+  });
+
+  test('si ya viene una sesión, se conserva', async () => {
+    const response = await post({ puzzle: PUZZLE, patternKey: detection.patternKey }, 'sid=mia');
+    expect(sessionOf(response)).toBe('mia');
   });
 });

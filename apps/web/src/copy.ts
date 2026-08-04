@@ -76,6 +76,10 @@ export const copy = {
     label: 'Explanation',
     loading: 'Writing the explanation…',
     pattern: (refs: string): string => `Pattern: ${refs}`,
+    /** 429: el límite es de explicaciones, no de partidas — eso hay que decirlo. */
+    limit: (limit: number): string =>
+      `That is ${limit} explanations for today. The board is still yours: keep solving, ` +
+      'and the counter resets at midnight UTC.',
     techniques,
   },
   board: {
