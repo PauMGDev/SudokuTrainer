@@ -30,7 +30,7 @@ Pasos pequeños, commits frecuentes. No avanzar de fase con el done anterior en 
 - [x] 3.3 Nueva partida por dificultad + estado de victoria. Done: partida completa de principio a fin.
 
 ## Fase 4 — Hint y Explain (frontend)
-- [ ] 4.1 Botón Hint: engine detecta siguiente técnica, resaltar celdas del patrón sin revelar valores. Done: hint correcto sobre fixtures.
+- [x] 4.1 Botón Hint: engine detecta siguiente técnica, resaltar celdas del patrón sin revelar valores. Done: hint correcto sobre fixtures.
 - [ ] 4.2 Panel de explicación (UI only, con texto mock). Done: flujo visual completo sin API.
 
 ## Fase 5 — API /api/explain
@@ -119,6 +119,25 @@ repitamos un prompt: es la señal de la siguiente pieza (command, hook, agente).
   misma regla que en 2.2-2.5: la abstracción se paga con el segundo consumidor.
   Señal a vigilar: si 3.3 (estado de victoria) o 4.1 necesitan la misma lectura,
   `findConflicts` sube al engine con su fixture y su test.
+- 2026-08-04 (4.1): la detección corre en el cliente, no en una route. El invariante
+  de 5.1 ("la técnica que envía el cliente se re-verifica en servidor") ya daba por
+  hecho que el cliente detecta; lo que había que comprobar era el empaquetado.
+  Verificado sobre `.next/static`: `pointing-pair` sí viaja, `countSolutions` y
+  `hasUniqueSolution` no. El `"sideEffects": false` que se añadió en 3.1 es lo que
+  permite que entren los detectores sin arrastrar el solver. Señal a vigilar: ese
+  grep deja de ser una formalidad — ahora el bundle importa media fase 2.
+- 2026-08-04 (4.1): con un conflicto en el tablero, Hint se niega a detectar. Un
+  dígito mal puesto envenena los candidatos y el detector señalaría un patrón que no
+  existe: la pista sería una mentira con aspecto de lección. Señal a vigilar: 4.2 y
+  5.1 tienen que heredar el mismo guard — no se explica una detección sobre un
+  tablero en conflicto. El resaltado usa `outline` y no fondo ni `ring` porque los
+  otros dos canales ya son "dónde estás" y "qué está mal".
+- 2026-08-04 (4.1): tres ediciones seguidas fallaron por no encontrar el texto en
+  `Game.tsx`. Causa: un espacio no separable (U+00A0) que el propio agente había
+  escrito dentro de un `' '` en 3.1, invisible en el diff y en el editor. Se
+  resolvió reescribiendo las líneas por número. Señal a vigilar: si vuelve a pasar,
+  un hook de PreToolUse que rechace caracteres no ASCII invisibles en el código
+  (el texto visible va en `copy.ts`, donde sí tienen sentido).
 - 2026-08-04 (3.3): la partida vive en la URL (`?difficulty=hard&seed=12`) en vez de
   API route o pool pregenerado. Medido antes de elegir: `generate` cuesta 8–330 ms
   según nivel, asumible por navegación, así que la página pasa a dinámica y el
