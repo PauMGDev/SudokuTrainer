@@ -14,6 +14,21 @@ datasource db {
   provider = "postgresql"
 }
 
+/// Cuánto ha gastado hoy una sesión anónima.
+/// La ventana es el día natural en UTC, no una ventana deslizante: es lo que se
+/// explica en una frase ("10 al día") y lo que se borra con un `day < hoy`.
+model ExplainQuota {
+  /// UUID opaco de la cookie. No hay tabla de sesiones: de un anónimo no hay
+  /// nada más que saber.
+  sessionId String
+  /// Día natural en UTC, `YYYY-MM-DD`.
+  day       String
+  /// Explicaciones redactadas. Los aciertos de caché no cuentan: no cuestan.
+  used      Int    @default(0)
+
+  @@id([sessionId, day])
+}
+
 /// Una explicación ya redactada para un patrón concreto.
 model Explanation {
   /// Clave canónica de la detección (`Detection.patternKey` del engine).
