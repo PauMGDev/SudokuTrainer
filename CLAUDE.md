@@ -23,6 +23,9 @@ Es un proyecto de portfolio: la demo pública y la legibilidad del repo son el p
 - Copys de UI centralizados en `apps/web/src/copy.ts`. Sin strings hardcodeados en componentes.
 - Celdas siempre en notación R#C# (R1C1 = esquina superior izquierda), en código y en prompts.
 - Técnica nueva = fixture y test primero, detección después.
+- Commits en Conventional Commits (feat/fix/test/docs/chore/refactor + scope),
+  mensaje en inglés, imperativo, ≤72 caracteres el título. Cuerpo solo si el
+  porqué no es obvio del diff.
 
 ## Cierre de tarea
 - Nada está terminado sin `pnpm test` y `pnpm build` en verde.
