@@ -4,8 +4,12 @@
  * `dotenv/config` de la primera línea.
  */
 
-import 'dotenv/config';
+import { fileURLToPath } from 'node:url';
+import { config } from 'dotenv';
 import { defineConfig } from 'prisma/config';
+
+// El `.env` está en la raíz del monorepo, no aquí: hay uno solo para todos.
+config({ path: fileURLToPath(new URL('../../.env', import.meta.url)) });
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',

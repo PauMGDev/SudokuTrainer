@@ -26,6 +26,7 @@ import {
   setCandidates,
   setCellValue,
   toIndex,
+  toString as boardToString,
   toggleCandidate,
   toRef,
   type Board,
@@ -233,6 +234,11 @@ export function hintMessage(hint: Hint | null): string | null {
   if (hint.kind === 'conflict') return copy.hint.conflict;
   if (hint.kind === 'none') return copy.hint.none;
   return copy.hint.found(formatRefs(hint.cells));
+}
+
+/** Los 81 caracteres del tablero: el formato con el que viaja a /api/explain. */
+export function toWire(board: Board): string {
+  return boardToString(board);
 }
 
 /** Lo que el panel necesita saber de una detección para pintarse. */
