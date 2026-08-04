@@ -1,0 +1,18 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Tokens de identidad — origen: paumiquel.com */
+  --color-surface: #09090b; /* fondo (zinc-950 del portfolio) */
+  --color-ink: #f4f4f5; /* texto primario (zinc-100) */
+  --color-ink-muted: #a1a1aa; /* texto secundario (zinc-400) */
+  --color-ink-faint: #52525b; /* terciario, labels (zinc-600) */
+  --color-line: #27272a; /* bordes y divisores (zinc-800) */
+  --color-accent: #22d3ee; /* cyan-400: selección, foco, acción */
+  --color-accent-deep: #0e7490; /* cyan-700: estados y enlaces */
+  --color-danger: #f87171; /* red-400: conflicto */
+}
+
+/*
+ * --color-ink-faint da ~2.9:1 sobre --color-surface: sirve para labels grandes,
+ * NO para dígitos ni texto pequeño. Las notas de 3.2 usarán --color-ink-muted.
+ */
