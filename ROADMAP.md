@@ -36,7 +36,7 @@ Pasos pequeños, commits frecuentes. No avanzar de fase con el done anterior en 
 ## Fase 5 — API /api/explain
 - [x] 5.1 Route con validación + re-verificación de la detección en servidor. Done: rechaza detecciones inválidas.
 - [x] 5.2 Prisma + Postgres: caché por hash de patrón. Done: segunda petición igual no llama fuera (test/log).
-- [ ] 5.3 Rate limit por sesión (cookie, 10/día, 429 amable). Done: petición 11 recibe 429.
+- [x] 5.3 Rate limit por sesión (cookie, 10/día, 429 amable). Done: petición 11 recibe 429.
 - [ ] 5.4 Integración Anthropic (claude-haiku-4-5, prompt del TASK). Done: explicación real en el panel; grep de ANTHROPIC en bundle cliente vacío.
 
 ## Fase 6 — Pulido y despliegue
@@ -119,6 +119,23 @@ repitamos un prompt: es la señal de la siguiente pieza (command, hook, agente).
   misma regla que en 2.2-2.5: la abstracción se paga con el segundo consumidor.
   Señal a vigilar: si 3.3 (estado de victoria) o 4.1 necesitan la misma lectura,
   `findConflicts` sube al engine con su fixture y su test.
+- 2026-08-04 (5.3): la cuota cuenta redacciones, no peticiones. Un acierto de caché no
+  cuesta nada, así que no descuenta: el contador se toca justo antes de
+  `writeExplanation`, que es donde 5.4 gasta dinero de verdad. Consecuencia visible:
+  con la cuota agotada la app sigue explicando patrones ya vistos, y quien juega
+  patrones comunes casi no consume. Señal: esta es la historia que cuenta la sección
+  "Cost engineering" de 6.2 — caché primero, límite después, y el límite mide coste.
+- 2026-08-04 (5.3): la cookie se lee de la cabecera y se escribe con `Set-Cookie` a
+  mano, en vez de usar `cookies()` de `next/headers`. Motivo: `cookies()` exige el
+  contexto de petición de Next y volvería la route imposible de probar llamándola como
+  una función normal, que es como se prueban las 16 pruebas de este endpoint. Regla
+  aplicada: entre dos APIs equivalentes, la que no ata el código al framework.
+- 2026-08-04 (5.3): el test de las 11 peticiones falló al escribirlo, y el motivo no era
+  el código: las semillas `easy` 0, 1, 2 y 3 caen en el mismo tablero (medido en 3.3),
+  así que las "peticiones distintas" eran patrones repetidos que salían de caché sin
+  gastar cuota. Arreglado deduplicando por `patternKey` y usando semillas medidas
+  (0, 5, 6, 8). Regla aprendida: en cuanto hay caché, "peticiones distintas" deja de
+  significar "coste distinto", y un test de límite necesita datos distintos de verdad.
 - 2026-08-04 (5.2): Prisma 7 no es el Prisma que el agente creía saber. `url` está
   prohibido en el `datasource` del schema, la conexión entra por adaptador
   (`@prisma/adapter-pg`) desde el código, el CLI lee un `prisma.config.ts` que necesita
