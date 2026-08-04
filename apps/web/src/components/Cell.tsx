@@ -101,10 +101,15 @@ export function Cell({
         // última escrita aquí.
         // Los dígitos iguales se marcan en el propio número, no en el fondo:
         // el fondo ya dice dónde estás y qué comparte unidad contigo.
+        //
+        // Cyan apagado, y apagado con opacidad en vez de con `accent-deep`:
+        // ese sobre el fondo da 3,6:1, por debajo del mínimo AA para un dígito
+        // de ~16 px en móvil. Al 70% sale 5,6:1 y se sigue leyendo como
+        // secundario frente al contorno del hint, que va a plena intensidad.
         conflict
           ? 'text-danger'
           : sameDigit
-            ? 'text-accent'
+            ? 'text-accent/70'
             : cell.given
               ? 'text-ink'
               : 'text-ink-muted',
