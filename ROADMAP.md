@@ -40,7 +40,7 @@ Pasos pequeños, commits frecuentes. No avanzar de fase con el done anterior en 
 - [x] 5.4 Integración Anthropic (claude-haiku-4-5, prompt del TASK). Done: explicación real en el panel; grep de ANTHROPIC en bundle cliente vacío.
 
 ## Fase 6 — Pulido y despliegue
-- [ ] 6.1 Diseño final coherente con paumiquel.com (oscuro, cyan, mono en números), mobile. Done: revisión visual.
+- [x] 6.1 Diseño final coherente con paumiquel.com (oscuro, cyan, mono en números), mobile. Done: revisión visual.
 - [ ] 6.2 README: qué es, demo, arquitectura, sección "Cost engineering". Done: legible por un tercero.
 - [ ] 6.3 Deploy en Vercel + variables de entorno documentadas. Done: URL pública jugable.
 
@@ -119,6 +119,28 @@ repitamos un prompt: es la señal de la siguiente pieza (command, hook, agente).
   misma regla que en 2.2-2.5: la abstracción se paga con el segundo consumidor.
   Señal a vigilar: si 3.3 (estado de victoria) o 4.1 necesitan la misma lectura,
   `findConflicts` sube al engine con su fixture y su test.
+- 2026-08-04 (6.1): la tipografía se sacó del CSS compilado de paumiquel.com
+  (`styles-253EOP2A.css`: DM Sans, JetBrains Mono, DM Serif Display, labels mono en
+  versalitas con `tracking .2em`, borde zinc-800 con hover a cyan-400), no de mirar el
+  sitio y aproximar. Los colores ya se habían copiado así en 3.1; lo que faltaba era
+  todo lo demás. Diferencia deliberada con el original: aquí las fuentes las autohospeda
+  `next/font` en vez de pedirlas a Google en cada visita. Regla aplicada: el sistema de
+  diseño de un sitio existente se lee, no se recuerda — igual que los fixtures.
+- 2026-08-04 (6.1): la serif entró y salió en la misma sesión. La revisión visual de Pau
+  la descartó: un título editorial no encaja en una app de números, y con ella se fue la
+  única razón para descargar una tercera familia. Señal de que la revisión visual del
+  done no es un trámite — decidió una dependencia.
+- 2026-08-04 (6.1): `justify-center-safe` en vez de `justify-center`. En móvil la partida
+  entera no cabe en la pantalla, y centrar un contenido más alto que el hueco lo recorta
+  por arriba dejando lo cortado fuera del alcance del scroll. Es un fallo que no aparece
+  en el escritorio del que programa.
+- 2026-08-04 (6.1): el resaltado de dígitos iguales usa `accent/70`, no `accent-deep`.
+  Medido: `accent-deep` sobre el fondo da 3,6:1, por debajo del mínimo AA para un dígito
+  de ~16 px en móvil; al 70% de opacidad sale 5,6:1. Pau pidió "el cyan más apagado" y
+  esto lo cumple sin bajar del umbral. Regla aplicada: la misma que ya estaba anotada en
+  `globals.css` para `ink-faint` — un color se elige midiendo el contraste, no mirándolo.
+  Consecuencia de diseño: el cyan quedó en dos intensidades, apagado para "el mismo
+  dígito" y pleno para el patrón de la pista.
 - 2026-08-04 (5.4): al prompt no viaja el tablero. Solo la detección que el engine
   encontró y el servidor re-verificó: técnica, celdas, dígitos y conclusión. Motivo:
   sin los 81 caracteres delante, el modelo no puede resolver aunque quiera, y la regla
