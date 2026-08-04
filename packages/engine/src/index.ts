@@ -64,6 +64,13 @@ export {
 export { createRandom, type Random } from './random';
 
 export {
+  DIFFICULTIES,
+  classify,
+  solveByTechniques,
+  type Difficulty,
+} from './difficulty';
+
+export {
   TECHNIQUES,
   rankOf,
   type Detection,

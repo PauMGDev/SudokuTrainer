@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { emptyBoard, fromString, isSolved, setCellValue, toString } from '../board';
-import { CLASSIC, CLASSIC_SOLUTION } from '../fixtures/puzzles';
-import { requireRef } from '../notation';
+import { emptyBoard, fromString } from '../board';
+import { CLASSIC } from '../fixtures/puzzles';
 import { BOARD_SIZE, type Board, type Digit } from '../types';
 import { createDetection } from './detection';
 import { DETECTORS, detectAll, detectNext } from './registry';
@@ -126,28 +125,3 @@ describe('DETECTORS', () => {
   });
 });
 
-describe('resolver aplicando detecciones', () => {
-  /**
-   * Encadena `detectNext` colocando dígitos hasta que ninguna técnica coloca
-   * nada. Solo aplica colocaciones: las eliminaciones no persisten en el
-   * tablero, porque los candidatos se recalculan de los valores. Basta para
-   * comprobar de una vez que los detectores registrados no se contradicen.
-   */
-  function solveByTechniques(start: Board): Board {
-    let board = start;
-    for (let step = 0; step < BOARD_SIZE; step += 1) {
-      const detection = detectNext(board);
-      if (detection === null || detection.placements.length === 0) return board;
-      const { cell, digit } = detection.placements[0];
-      board = setCellValue(board, requireRef(cell), digit);
-    }
-    return board;
-  }
-
-  it('resuelve CLASSIC entero y con la solución correcta', () => {
-    const solved = solveByTechniques(fromString(CLASSIC));
-
-    expect(isSolved(solved)).toBe(true);
-    expect(toString(solved)).toBe(toString(fromString(CLASSIC_SOLUTION)));
-  });
-});
