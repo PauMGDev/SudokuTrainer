@@ -1,0 +1,23 @@
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+.next/
+out/
+*.tsbuildinfo
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Test output
+coverage/
+
+# Prisma generated client
+**/generated/prisma/
+
+# OS / editor
+.DS_Store
+*.log

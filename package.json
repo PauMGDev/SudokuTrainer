@@ -1,0 +1,20 @@
+{
+  "name": "sudoku-trainer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Sudoku trainer that detects which technique unlocks your next move and explains it on your board.",
+  "packageManager": "pnpm@11.17.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm run typecheck && pnpm --filter web build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm --filter engine test",
+    "db:up": "docker compose up -d --wait",
+    "db:down": "docker compose down",
+    "db:migrate": "pnpm --filter web db:migrate"
+  }
+}
