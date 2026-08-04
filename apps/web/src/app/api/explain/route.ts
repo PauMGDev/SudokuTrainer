@@ -8,13 +8,14 @@
  * Lo que no viaja no hay que validarlo — por eso no se aceptan ni técnica ni
  * celdas: se derivan de la detección re-encontrada.
  *
- * Hoy el texto sale de `copy.ts`; en 5.4 lo escribirá Claude. El contrato de
- * cable no cambia por eso.
+ * Verificada la detección, la explicación se busca en caché por `patternKey` y
+ * solo se redacta si falta. `cached` viaja en la respuesta porque es lo único
+ * que hace observable desde fuera que la segunda petición no pagó nada.
  */
 
 import { detectAll, fromString, type Board } from 'engine';
 
-import { copy } from '../../../copy';
+import { findExplanation, saveExplanation, writeExplanation } from '../../../lib/explanations';
 
 /** Una `patternKey` real ronda los 80 caracteres; más allá es basura. */
 const MAX_PATTERN_KEY = 200;
@@ -64,8 +65,12 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: 'unknown_detection' }, { status: 422 });
   }
 
-  return Response.json({
-    technique: detection.technique,
-    explanation: copy.explanation.techniques[detection.technique].body,
-  });
+  const cached = await findExplanation(detection.patternKey);
+  if (cached !== null) {
+    return Response.json({ technique: cached.technique, explanation: cached.text, cached: true });
+  }
+
+  const written = await writeExplanation(detection);
+  await saveExplanation(detection.patternKey, written);
+  return Response.json({ technique: written.technique, explanation: written.text, cached: false });
 }
