@@ -1,0 +1,26 @@
+// Caché de explicaciones. Es la única tabla del proyecto y probablemente la
+// única que habrá: el estado de la partida vive en el cliente y el tablero se
+// regenera de su semilla, así que lo único que merece persistirse es lo que
+// cuesta dinero producir.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+// Sin `url`: Prisma 7 lo prohíbe aquí. La cadena de conexión la lee el CLI de
+// `prisma.config.ts` y la app se la pasa al cliente por adaptador (`src/lib/db.ts`).
+datasource db {
+  provider = "postgresql"
+}
+
+/// Una explicación ya redactada para un patrón concreto.
+model Explanation {
+  /// Clave canónica de la detección (`Detection.patternKey` del engine).
+  /// Sin hashear a propósito: ya es canónica, cabe en un índice y se puede leer
+  /// con psql cuando algo salga raro. Si algún día crece, se pasa a sha256.
+  patternKey String   @id
+  technique  String
+  text       String
+  createdAt  DateTime @default(now())
+}
