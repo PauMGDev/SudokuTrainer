@@ -15,6 +15,13 @@ export const copy = {
     title: 'Sudoku Trainer',
     tagline: 'Learn the technique, not the answer.',
   },
+  game: {
+    difficultyLabel: 'Difficulty',
+    difficulty: { easy: 'Easy', medium: 'Medium', hard: 'Hard' },
+    newGame: 'New game',
+    /** Se anuncia solo cuando el tablero está lleno y sin conflictos. */
+    won: 'Solved. Every cell checks out.',
+  },
   board: {
     label: 'Sudoku board',
     /** Lo que anuncia un lector de pantalla al entrar en una celda. */
