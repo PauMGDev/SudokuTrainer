@@ -8,10 +8,12 @@
  * mismo naked pair en tableros distintos comparten entrada.
  */
 
+import Anthropic from '@anthropic-ai/sdk';
 import type { Detection } from 'engine';
 
 import { copy } from '../copy';
 import { db } from './db';
+import { MAX_TOKENS, MODEL, SYSTEM_PROMPT, userPrompt } from './prompt';
 
 export interface Explanation {
   readonly technique: string;
@@ -43,14 +45,46 @@ export async function saveExplanation(
   });
 }
 
-/**
- * El camino caro: redactar. Hoy devuelve el texto fijo de la técnica; en 5.4
- * aquí entra Claude con la detección concreta. Todo lo demás ya está pensado
- * para que esto se llame lo menos posible.
- */
-export async function writeExplanation(detection: Detection): Promise<Explanation> {
+/** El texto fijo de la técnica: lo que se responde cuando Claude no está. */
+function fallback(detection: Detection): Explanation {
   return {
     technique: detection.technique,
     text: copy.explanation.techniques[detection.technique].body,
   };
+}
+
+/**
+ * El camino caro: redactar con Claude la detección concreta.
+ *
+ * Cae al texto fijo de la técnica si no hay clave o si la llamada falla. Dos
+ * motivos: el proyecto se puede levantar y jugar sin `ANTHROPIC_API_KEY`, y un
+ * fallo de red no debe romper una partida — la explicación genérica es peor
+ * que la buena, pero infinitamente mejor que un panel roto.
+ */
+export async function writeExplanation(detection: Detection): Promise<Explanation> {
+  const apiKey = process.env['ANTHROPIC_API_KEY'];
+  if (apiKey === undefined || apiKey === '') return fallback(detection);
+
+  try {
+    const message = await new Anthropic({ apiKey }).messages.create({
+      model: MODEL,
+      max_tokens: MAX_TOKENS,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: userPrompt(detection) }],
+    });
+
+    // `content` es una unión: solo los bloques de texto son la explicación.
+    const text = message.content
+      .map((block) => (block.type === 'text' ? block.text : ''))
+      .join('')
+      .trim();
+
+    if (text === '') return fallback(detection);
+    return { technique: detection.technique, text };
+  } catch (error) {
+    // El error se registra en servidor y no viaja al cliente: puede llevar
+    // detalles de la cuenta, y el jugador no puede hacer nada con ellos.
+    console.error('No se pudo redactar la explicación con Claude:', error);
+    return fallback(detection);
+  }
 }
