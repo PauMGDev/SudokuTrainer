@@ -46,6 +46,8 @@ export {
   type UnitKind,
 } from './units';
 
+export { countSolutions, hasUniqueSolution, solve } from './solver';
+
 export {
   candidatesFor,
   emptyBoard,

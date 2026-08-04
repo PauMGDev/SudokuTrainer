@@ -7,7 +7,7 @@ Pasos pequeños, commits frecuentes. No avanzar de fase con el done anterior en 
 
 ## Fase 1 — Engine: núcleo
 - [x] 1.1 Modelo de tablero: tipos (Cell, Board, Candidate), notación R#C#, utilidades de unidades (fila/columna/caja). Done: tipos sin `any`, tests de utilidades en verde.
-- [ ] 1.2 Solver por backtracking + contador de soluciones. Done: resuelve fixtures conocidos, detecta multi-solución.
+- [x] 1.2 Solver por backtracking + contador de soluciones. Done: resuelve fixtures conocidos, detecta multi-solución.
 - [ ] 1.3 Generador con solución única y 3 dificultades (calibradas por técnicas requeridas, no por huecos). Done: test de unicidad sobre N tableros generados.
 
 ## Fase 2 — Engine: detección de técnicas (fixture-first)
