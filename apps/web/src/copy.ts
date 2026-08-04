@@ -23,4 +23,11 @@ export const copy = {
       return given ? `${ref}, ${value}, clue` : `${ref}, ${value}`;
     },
   },
+  keypad: {
+    label: 'Number pad',
+    digit: (digit: number): string => `Enter ${digit}`,
+    eraseGlyph: '⌫',
+    erase: 'Erase cell',
+    hint: 'Pick a cell to start.',
+  },
 } as const;

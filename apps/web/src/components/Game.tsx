@@ -1,10 +1,12 @@
 'use client';
 
 import { useCallback, useMemo, useReducer, type KeyboardEvent } from 'react';
-import type { CellIndex } from 'engine';
+import type { CellIndex, Digit } from 'engine';
 
+import { copy } from '../copy';
 import { findConflicts, gameReducer, initGame, keyToAction } from '../lib/game';
 import { Board } from './Board';
+import { Keypad } from './Keypad';
 
 /**
  * Única frontera cliente de la app: todo lo que cuelga de aquí es cliente por
@@ -23,6 +25,10 @@ export function Game({ puzzle }: { readonly puzzle: string }) {
     dispatch({ type: 'select', index });
   }, []);
 
+  const handleInput = useCallback((digit: Digit | null) => {
+    dispatch({ type: 'input', digit });
+  }, []);
+
   const handleKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
     const action = keyToAction(event.key);
     if (action === null) return;
@@ -32,12 +38,18 @@ export function Game({ puzzle }: { readonly puzzle: string }) {
   }, []);
 
   return (
-    <Board
-      board={state.board}
-      selected={state.selected}
-      conflicts={conflicts}
-      onSelect={handleSelect}
-      onKeyDown={handleKeyDown}
-    />
+    <div className="flex flex-col gap-4">
+      <Board
+        board={state.board}
+        selected={state.selected}
+        conflicts={conflicts}
+        onSelect={handleSelect}
+        onKeyDown={handleKeyDown}
+      />
+      <Keypad onInput={handleInput} disabled={state.selected === null} />
+      <p aria-hidden={state.selected !== null} className="text-center text-sm text-ink-faint">
+        {state.selected === null ? copy.keypad.hint : ' '}
+      </p>
+    </div>
   );
 }
