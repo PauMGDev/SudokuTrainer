@@ -4,7 +4,7 @@ import { useCallback, useMemo, useReducer, type KeyboardEvent } from 'react';
 import type { CellIndex, Digit } from 'engine';
 
 import { copy } from '../copy';
-import { findConflicts, gameReducer, initGame, keyToAction } from '../lib/game';
+import { findConflicts, gameReducer, initGame, keyToAction, peerHighlight } from '../lib/game';
 import { Board } from './Board';
 import { Keypad } from './Keypad';
 
@@ -20,6 +20,8 @@ export function Game({ puzzle }: { readonly puzzle: string }) {
   // 81 × 20 comparaciones, pero solo cuando cambia el tablero: mover la
   // selección no las repite.
   const conflicts = useMemo(() => findConflicts(state.board), [state.board]);
+
+  const peers = useMemo(() => peerHighlight(state.selected), [state.selected]);
 
   const handleSelect = useCallback((index: CellIndex) => {
     dispatch({ type: 'select', index });
@@ -42,6 +44,7 @@ export function Game({ puzzle }: { readonly puzzle: string }) {
       <Board
         board={state.board}
         selected={state.selected}
+        peers={peers}
         conflicts={conflicts}
         onSelect={handleSelect}
         onKeyDown={handleKeyDown}

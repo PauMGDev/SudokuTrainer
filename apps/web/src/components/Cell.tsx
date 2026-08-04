@@ -10,6 +10,8 @@ interface CellProps {
   readonly row: number;
   readonly col: number;
   readonly selected: boolean;
+  /** Comparte fila, columna o caja con la celda seleccionada. */
+  readonly peer: boolean;
   /** Repite valor con alguna de sus compañeras de fila, columna o caja. */
   readonly conflict: boolean;
   /** `true` en la única celda tabulable de la rejilla (roving tabindex). */
@@ -36,6 +38,7 @@ export function Cell({
   row,
   col,
   selected,
+  peer,
   conflict,
   tabbable,
   onSelect,
@@ -63,7 +66,9 @@ export function Cell({
         // tienen orden garantizado, gana la última definida en la hoja, no la
         // última escrita aquí.
         conflict ? 'text-danger' : cell.given ? 'text-ink' : 'text-ink-muted',
-        conflict ? 'bg-danger/10' : selected ? 'bg-accent/10' : '',
+        // El peer es contexto, no información: un gris, nunca el acento, o la
+        // vista compite con la celda seleccionada.
+        conflict ? 'bg-danger/10' : selected ? 'bg-accent/10' : peer ? 'bg-ink/5' : '',
         selected ? 'z-10 ring-2 ring-inset ring-accent' : '',
       ].join(' ')}
     >

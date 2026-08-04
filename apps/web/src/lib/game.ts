@@ -103,6 +103,18 @@ export function findConflicts(board: Board): ReadonlySet<CellIndex> {
   return conflicts;
 }
 
+const NO_CELLS: ReadonlySet<CellIndex> = new Set();
+
+/**
+ * Las 20 compañeras de fila, columna y caja de la celda seleccionada: las que
+ * comparten unidad con ella y por tanto no pueden repetir su valor. Es la ayuda
+ * visual que sustituye a recorrer la rejilla con el dedo.
+ */
+export function peerHighlight(selected: CellIndex | null): ReadonlySet<CellIndex> {
+  if (selected === null) return NO_CELLS;
+  return new Set(peersOf(selected));
+}
+
 const ARROWS: Readonly<Record<string, { drow: number; dcol: number }>> = {
   ArrowUp: { drow: -1, dcol: 0 },
   ArrowDown: { drow: 1, dcol: 0 },
