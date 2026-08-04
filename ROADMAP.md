@@ -17,7 +17,7 @@ Pasos pequeños, commits frecuentes. No avanzar de fase con el done anterior en 
 - [x] 2.1 Infraestructura de detección: interfaz Detector, resultado normalizado (técnica, celdas, candidatos, patrón para caché). Done: un detector dummy pasa por la interfaz.
 - [x] 2.2 Naked single. 2.3 Hidden single. 2.4 Naked pair. 2.5 Pointing pair.
       Cada una: fixture con tablero que la contiene → test → detector. Done: test en verde por técnica.
-- [ ] 2.6 Dificultad del generador (segundo tiempo de 1.3): resolver el tablero generado
+- [x] 2.6 Dificultad del generador (segundo tiempo de 1.3): resolver el tablero generado
       aplicando solo detectores y clasificarlo por la técnica más avanzada que exige,
       no por número de huecos. Fácil = solo singles; media = hasta naked pair;
       difícil = necesita pointing pair. Si no se resuelve con los detectores, se descarta.
@@ -98,3 +98,13 @@ repitamos un prompt: es la señal de la siguiente pieza (command, hook, agente).
   uno (`generate({ seed: 3 })`) y el test verifica que el fixture sigue siendo ese
   tablero. Misma regla que con HARD_23: los datos verificables se construyen con
   las herramientas del proyecto, no se recuerdan.
+- 2026-08-04 (2.6): medido antes de escribir el clasificador, sobre 100 semillas:
+  fáciles 48, medias 4, difíciles 4, sin clasificar 44. Dos consecuencias que el
+  roadmap no preveía. Una: con cuatro técnicas, casi la mitad de los tableros
+  minimales no se resuelven y se descartan, así que "difícil" significa hoy "lo
+  más duro que el engine sabe explicar", no lo más duro que existe; sumar técnicas
+  (X-wing, naked triple) reclasificará parte de ese 44%. Dos: pedir "media" o
+  "difícil" cuesta ~25 semillas, y por eso `generate` itera con tope y los tests
+  parten de semillas ya medidas en vez de buscar en cada ejecución.
+  Regla aplicada: medir la distribución antes de fijar el criterio de done; el
+  plan decía "N tableros por dificultad" sin saber si N era alcanzable.
