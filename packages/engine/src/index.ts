@@ -64,6 +64,20 @@ export {
 export { createRandom, type Random } from './random';
 
 export {
+  TECHNIQUES,
+  rankOf,
+  type Detection,
+  type Detector,
+  type Elimination,
+  type Placement,
+  type TechniqueId,
+} from './detectors/types';
+
+export { createDetection, type DetectionInput } from './detectors/detection';
+
+export { DETECTORS, detectAll, detectNext } from './detectors/registry';
+
+export {
   candidatesFor,
   emptyBoard,
   fromString,
