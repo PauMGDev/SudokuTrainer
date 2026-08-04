@@ -46,7 +46,14 @@ export default async function Page(props: PageProps<'/'>) {
   const href = (level: Difficulty): string => `/?difficulty=${level}&seed=${seed + 1}`;
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-lg flex-col justify-center gap-6 p-4">
+    // `justify-center-safe`, no `justify-center`: en un móvil la partida entera
+    // no cabe en la pantalla, y centrar un contenido más alto que el hueco
+    // recorta por arriba y deja lo cortado fuera del alcance del scroll.
+    // El padding inferior respeta la barra de gestos de iOS.
+    <main
+      className="mx-auto flex min-h-dvh w-full max-w-lg flex-col justify-center-safe gap-5 p-4
+        pb-[max(1rem,env(safe-area-inset-bottom))] sm:gap-6"
+    >
       {/* Mismo patrón que el portfolio: label mono en versalitas, título serif
           grande, subtítulo mono apagado. */}
       <header className="flex flex-col gap-3">
@@ -57,18 +64,22 @@ export default async function Page(props: PageProps<'/'>) {
         <p className="font-mono text-sm text-ink-muted">{copy.app.tagline}</p>
       </header>
 
-      <nav aria-label={copy.game.difficultyLabel} className="flex flex-wrap gap-2">
+      {/* En móvil, los tres niveles se reparten la fila y "New game" ocupa la
+          suya: con `flex-wrap` y `ml-auto` quedaba descolgado a media línea. */}
+      <nav aria-label={copy.game.difficultyLabel} className="flex flex-wrap items-center gap-2">
         {DIFFICULTIES.map((level) => (
           <Link
             key={level}
             href={href(level)}
             aria-current={level === difficulty ? 'page' : undefined}
-            className={`${LINK} ${level === difficulty ? 'border-accent text-accent' : 'text-ink-muted'}`}
+            className={`${LINK} flex-1 sm:flex-none ${
+              level === difficulty ? 'border-accent text-accent' : 'text-ink-muted'
+            }`}
           >
             {copy.game.difficulty[level]}
           </Link>
         ))}
-        <Link href={href(difficulty)} className={`${LINK} ml-auto`}>
+        <Link href={href(difficulty)} className={`${LINK} w-full text-ink-muted sm:ml-auto sm:w-auto`}>
           {copy.game.newGame}
         </Link>
       </nav>
