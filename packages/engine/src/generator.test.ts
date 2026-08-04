@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import { BOARD_SIZE, type Board } from './types';
-import { fromString, toString } from './board';
+import { fromString, isSolved, toString } from './board';
+import { DIFFICULTIES, classify, solveByTechniques, type Difficulty } from './difficulty';
+import type { TechniqueId } from './detectors/types';
 import { countClues, generate, generateSolution } from './generator';
 import { createRandom } from './random';
 import { hasUniqueSolution, solve } from './solver';
@@ -78,5 +80,52 @@ describe('generate', () => {
       without[index] = '.';
       expect(hasUniqueSolution(fromString(without.join(''))), `sobra la pista ${index}`).toBe(false);
     });
+  });
+});
+
+describe('generate por dificultad', () => {
+  /**
+   * Tres tableros por nivel: suficiente para que un fallo de clasificación se
+   * vea, y barato porque las semillas son consecutivas y el generador va rápido.
+   */
+  const PER_DIFFICULTY = 3;
+
+  /** El nivel inmediatamente anterior, o `null` para el más fácil. */
+  const PREVIOUS: Readonly<Record<Difficulty, TechniqueId | null>> = {
+    easy: null,
+    medium: 'hidden-single',
+    hard: 'naked-pair',
+  };
+
+  it.each([...DIFFICULTIES])('devuelve %s tableros del nivel pedido', (difficulty) => {
+    let seed = 0;
+    for (let found = 0; found < PER_DIFFICULTY; found += 1) {
+      const generated = generate({ seed, difficulty });
+
+      expect(generated.difficulty).toBe(difficulty);
+      expect(hasUniqueSolution(generated.puzzle)).toBe(true);
+      // ...y no lo resuelven las técnicas del nivel anterior: si lo hicieran,
+      // sería un tablero de ese nivel mal etiquetado.
+      const previous = PREVIOUS[difficulty];
+      if (previous !== null) {
+        expect(isSolved(solveByTechniques(generated.puzzle, previous))).toBe(false);
+      }
+      seed = generated.seed + 1;
+    }
+  });
+
+  it('es reproducible: misma semilla y nivel, mismo tablero', () => {
+    const first = generate({ seed: 7, difficulty: 'hard' });
+    const again = generate({ seed: 7, difficulty: 'hard' });
+
+    expect(toString(again.puzzle)).toBe(toString(first.puzzle));
+    expect(again.seed).toBe(first.seed);
+  });
+
+  it('sin dificultad pedida devuelve la semilla tal cual, clasificada', () => {
+    const generated = generate({ seed: 0 });
+
+    expect(generated.seed).toBe(0);
+    expect(generated.difficulty).toBe(classify(generated.puzzle));
   });
 });

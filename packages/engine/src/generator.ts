@@ -12,15 +12,16 @@
  * absoluto —para eso habría que probar todos los órdenes—, pero sí garantiza
  * que no sobra ninguna.
  *
- * La dificultad no se calibra aquí: clasificar por la técnica más avanzada que
- * exige un tablero necesita los detectores de la fase 2 (paso 2.6). Este paso
- * solo promete unicidad.
+ * La dificultad la mide `classify`: la técnica más avanzada que el tablero
+ * obliga a usar. Pedir un nivel concreto es probar semillas hasta que una cae
+ * en él, porque quitar pistas no permite apuntar a una dificultad.
  */
 
 import { BOARD_SIZE, DIGITS, type Board } from './types';
 import { emptyBoard, fromString, getCell, toString } from './board';
 import { hasUniqueSolution, solve } from './solver';
 import { createRandom, type Random } from './random';
+import { classify, type Difficulty } from './difficulty';
 
 export interface GeneratedPuzzle {
   /** El tablero a jugar. Todas sus celdas rellenas son pistas. */
@@ -31,6 +32,11 @@ export interface GeneratedPuzzle {
   readonly seed: number;
   /** Cuántas pistas conserva el enunciado. */
   readonly clues: number;
+  /**
+   * La técnica más avanzada que exige, o `null` si no se resuelve con ninguna
+   * de las que el engine sabe explicar. Ver `classify`.
+   */
+  readonly difficulty: Difficulty | null;
 }
 
 export interface GenerateOptions {
@@ -39,7 +45,21 @@ export interface GenerateOptions {
    * sirve para reproducir un puzzle concreto en un test o en un informe de bug.
    */
   readonly seed?: number;
+  /**
+   * Nivel exigido. El generador prueba semillas consecutivas desde `seed` hasta
+   * dar con un tablero de ese nivel, así que sigue siendo reproducible: mismos
+   * `seed` y `difficulty`, mismo tablero.
+   */
+  readonly difficulty?: Difficulty;
 }
+
+/**
+ * Semillas que se prueban antes de rendirse al pedir una dificultad.
+ * Medido sobre las 100 primeras: fáciles ~48%, medias ~4%, difíciles ~4% y el
+ * resto no se resuelve con las técnicas conocidas. Con el nivel más escaso, 200
+ * intentos fallan solo si algo se ha roto, no por mala suerte.
+ */
+const MAX_ATTEMPTS = 200;
 
 /** Una rejilla completa válida, elegida al azar según el generador `random`. */
 export function generateSolution(random: Random): Board {
@@ -76,14 +96,8 @@ export function countClues(board: Board): number {
   return clues;
 }
 
-/**
- * Genera un sudoku con solución única.
- * Sin semilla explícita se usa la 0, reproducible a propósito: en un engine
- * determinista, "dame uno al azar" tiene que ser una decisión de quien llama,
- * no un efecto oculto.
- */
-export function generate(options: GenerateOptions = {}): GeneratedPuzzle {
-  const seed = options.seed ?? 0;
+/** El tablero de una semilla concreta, ya clasificado. */
+function generateFromSeed(seed: number): GeneratedPuzzle {
   const random = createRandom(seed);
   const solution = generateSolution(random);
   const puzzle = removeClues(solution, random);
@@ -93,5 +107,25 @@ export function generate(options: GenerateOptions = {}): GeneratedPuzzle {
     solution,
     seed,
     clues: countClues(puzzle),
+    difficulty: classify(puzzle),
   });
+}
+
+/**
+ * Genera un sudoku con solución única.
+ * Sin semilla explícita se usa la 0, reproducible a propósito: en un engine
+ * determinista, "dame uno al azar" tiene que ser una decisión de quien llama,
+ * no un efecto oculto.
+ */
+export function generate(options: GenerateOptions = {}): GeneratedPuzzle {
+  const first = options.seed ?? 0;
+  if (options.difficulty === undefined) return generateFromSeed(first);
+
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
+    const generated = generateFromSeed(first + attempt);
+    if (generated.difficulty === options.difficulty) return generated;
+  }
+  throw new Error(
+    `Ningún tablero de dificultad ${options.difficulty} en ${MAX_ATTEMPTS} semillas desde ${first}`,
+  );
 }
