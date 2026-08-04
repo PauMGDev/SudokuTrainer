@@ -77,6 +77,8 @@ export { createDetection, type DetectionInput } from './detectors/detection';
 
 export { DETECTORS, detectAll, detectNext } from './detectors/registry';
 
+export { findNakedSingles, nakedSingleDetector } from './detectors/naked-single';
+
 export {
   candidatesFor,
   emptyBoard,

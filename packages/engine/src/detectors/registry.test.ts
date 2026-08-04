@@ -80,8 +80,10 @@ describe('detectNext', () => {
     expect(detectNext(emptyBoard(), [silentDetector])).toBeNull();
   });
 
-  it('devuelve null sin detectores registrados', () => {
-    expect(detectNext(fromString(CLASSIC))).toBeNull();
+  it('usa los detectores registrados si no se le pasan otros', () => {
+    const detection = detectNext(fromString(CLASSIC));
+
+    expect(detection?.technique).toBe('naked-single');
   });
 
   it('no muta el array de detectores que recibe', () => {
@@ -115,7 +117,10 @@ describe('detectAll', () => {
 });
 
 describe('DETECTORS', () => {
-  it('nace vacío: las técnicas se registran en 2.2-2.5', () => {
-    expect(DETECTORS).toEqual([]);
+  it('registra técnicas conocidas y sin repetir', () => {
+    const registered = DETECTORS.map((detector) => detector.technique);
+
+    expect(new Set(registered).size).toBe(registered.length);
+    expect(registered.every((technique) => TECHNIQUES.includes(technique))).toBe(true);
   });
 });
