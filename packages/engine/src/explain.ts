@@ -52,8 +52,18 @@ export interface UnitRef {
 export type Blocker =
   /** La celda ya tiene otro dígito: `digit` es ese otro dígito. */
   | { readonly reason: 'occupied'; readonly digit: Digit }
-  /** La celda está vacía, pero `at` ya lleva `digit`, el dígito buscado. */
-  | { readonly reason: 'peer'; readonly digit: Digit; readonly at: CellRef };
+  /**
+   * La celda está vacía, pero `at` ya lleva `digit`, el dígito buscado.
+   * `via` es la unidad que las relaciona: sin ella el redactor sabe QUÉ celda
+   * bloquea pero no POR QUÉ vía, y se inventa la geometría. `occupied` no la
+   * lleva porque ahí no hay dos celdas que relacionar.
+   */
+  | {
+      readonly reason: 'peer';
+      readonly digit: Digit;
+      readonly at: CellRef;
+      readonly via: UnitRef;
+    };
 
 export interface BlockedCell {
   readonly cell: CellRef;
@@ -178,6 +188,21 @@ function explainNakedSingle(board: Board, detection: Detection): NakedSingleExpl
   return Object.freeze({ technique: 'naked-single', cell, place: digit, eliminatedBy });
 }
 
+/**
+ * La unidad por la que dos celdas se ven.
+ *
+ * Pueden compartir dos: las de la misma banda comparten línea Y caja. Gana la
+ * línea porque es la relación más específica y la que se narra sola ("está en
+ * la misma columna"); la caja es el argumento de repuesto. Elegir es del
+ * engine: si sale ambiguo de aquí, el que redacta acaba inventándose cuál era.
+ */
+function sharedUnit(a: CellIndex, b: CellIndex): Unit {
+  if (rowOf(a) === rowOf(b)) return ROWS[rowOf(a)];
+  if (colOf(a) === colOf(b)) return COLUMNS[colOf(a)];
+  if (boxOf(a) === boxOf(b)) return BOXES[boxOf(a)];
+  throw new Error(`${toRef(a)} y ${toRef(b)} no comparten fila, columna ni caja`);
+}
+
 /** Por qué el dígito no cabe en esta celda de la unidad. */
 function blockerFor(board: Board, index: CellIndex, digit: Digit): Blocker {
   const value = getCell(board, index).value;
@@ -188,7 +213,7 @@ function blockerFor(board: Board, index: CellIndex, digit: Digit): Blocker {
   if (at === undefined) {
     throw new Error(`Hidden single incoherente: ${digit} sí cabe en ${toRef(index)}`);
   }
-  return { reason: 'peer', digit, at: toRef(at) };
+  return { reason: 'peer', digit, at: toRef(at), via: toUnitRef(sharedUnit(index, at)) };
 }
 
 function explainHiddenSingle(board: Board, detection: Detection): HiddenSingleExplain {

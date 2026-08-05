@@ -72,16 +72,40 @@ describe('explainData', () => {
       digit: 5,
       unit: { kind: 'row', index: 3 },
       cell: 'R3C7',
+      // Los tres cincos de CLASSIC están en R1C1, R2C6 y R8C9, y cada hueco de
+      // la fila 3 cae bajo uno de ellos. La vía va escrita a mano: es el hecho
+      // que el engine tiene que dar, no algo que se derive de su propia salida.
       blockedCells: [
-        { cell: 'R3C1', blockedBy: { reason: 'peer', digit: 5, at: 'R1C1' } },
+        // R1C1 comparte columna 1 y caja 1 con R3C1: gana la línea.
+        { cell: 'R3C1', blockedBy: { reason: 'peer', digit: 5, at: 'R1C1', via: { kind: 'column', index: 1 } } },
         { cell: 'R3C2', blockedBy: { reason: 'occupied', digit: 9 } },
         { cell: 'R3C3', blockedBy: { reason: 'occupied', digit: 8 } },
-        { cell: 'R3C4', blockedBy: { reason: 'peer', digit: 5, at: 'R2C6' } },
-        { cell: 'R3C5', blockedBy: { reason: 'peer', digit: 5, at: 'R2C6' } },
-        { cell: 'R3C6', blockedBy: { reason: 'peer', digit: 5, at: 'R2C6' } },
+        // R2C6 está en la caja 2 (filas 1-3 x columnas 4-6) igual que R3C4 y
+        // R3C5, pero ni en su fila ni en su columna: solo queda la caja.
+        { cell: 'R3C4', blockedBy: { reason: 'peer', digit: 5, at: 'R2C6', via: { kind: 'box', index: 2 } } },
+        { cell: 'R3C5', blockedBy: { reason: 'peer', digit: 5, at: 'R2C6', via: { kind: 'box', index: 2 } } },
+        // R3C6 sí está en la columna de R2C6, además de en su caja: gana la línea.
+        { cell: 'R3C6', blockedBy: { reason: 'peer', digit: 5, at: 'R2C6', via: { kind: 'column', index: 6 } } },
         { cell: 'R3C8', blockedBy: { reason: 'occupied', digit: 6 } },
-        { cell: 'R3C9', blockedBy: { reason: 'peer', digit: 5, at: 'R8C9' } },
+        // R8C9 está en la caja 9 y R3C9 en la 3: solo comparten la columna.
+        { cell: 'R3C9', blockedBy: { reason: 'peer', digit: 5, at: 'R8C9', via: { kind: 'column', index: 9 } } },
       ],
+    });
+  });
+
+  it('hidden single: si el bloqueador comparte línea y caja, la vía es la línea', () => {
+    const board = fromString(CLASSIC);
+    const data = explainData(board, findHiddenSingles(board)[0]);
+    if (data.technique !== 'hidden-single') throw new Error(`Esperaba hidden-single: ${data.technique}`);
+
+    // R3C6 y su bloqueador R2C6 se ven por dos unidades a la vez: la columna 6
+    // y la caja 2. El desempate lo fija el engine y sale la columna.
+    const blocked = data.blockedCells.find((entry) => entry.cell === 'R3C6');
+    expect(blocked?.blockedBy).toEqual({
+      reason: 'peer',
+      digit: 5,
+      at: 'R2C6',
+      via: { kind: 'column', index: 6 },
     });
   });
 
