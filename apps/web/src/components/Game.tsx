@@ -12,6 +12,7 @@ import {
   hintMessage,
   initGame,
   isWon,
+  evidenceCells,
   keyToAction,
   peerHighlight,
   sameDigitCells,
@@ -53,6 +54,13 @@ export function Game({ puzzle }: { readonly puzzle: string }) {
   const won = isWon(state.board, conflicts);
 
   const explanation = explanationFor(state.hint);
+
+  // Solo mientras el panel está abierto: el punto explica el texto que se está
+  // leyendo, y sin texto delante sería ruido sin referencia.
+  const evidence = useMemo(
+    () => (state.explain ? evidenceCells(state.board, state.hint) : new Set<number>()),
+    [state.explain, state.board, state.hint],
+  );
 
   const hinted = useMemo(
     () => new Set(state.hint?.kind === 'found' ? state.hint.cells : []),
@@ -138,6 +146,7 @@ export function Game({ puzzle }: { readonly puzzle: string }) {
             selected={state.selected}
             peers={peers}
             hinted={hinted}
+            evidence={evidence}
             sameDigit={sameDigit}
             conflicts={conflicts}
             onSelect={handleSelect}

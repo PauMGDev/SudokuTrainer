@@ -12,6 +12,8 @@ interface BoardProps {
   readonly peers: ReadonlySet<CellIndex>;
   /** Celdas del patrón de la última pista. Vacío si no hay pista en pantalla. */
   readonly hinted: ReadonlySet<CellIndex>;
+  /** Celdas que la explicación abierta cita como prueba. */
+  readonly evidence: ReadonlySet<CellIndex>;
   /** Celdas con el mismo dígito que la seleccionada. */
   readonly sameDigit: ReadonlySet<CellIndex>;
   readonly conflicts: ReadonlySet<CellIndex>;
@@ -29,6 +31,7 @@ export function Board({
   selected,
   peers,
   hinted,
+  evidence,
   sameDigit,
   conflicts,
   onSelect,
@@ -69,6 +72,7 @@ export function Board({
                 selected={selected === index}
                 peer={peers.has(index)}
                 hinted={hinted.has(index)}
+                evidence={evidence.has(index)}
                 sameDigit={sameDigit.has(index)}
                 conflict={conflicts.has(index)}
                 tabbable={tabbable === index}

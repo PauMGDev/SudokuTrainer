@@ -11,9 +11,12 @@ import {
   BOARD_SIZE,
   TECHNIQUES,
   detectNext,
+  explainData,
   formatRefs,
   generate,
   peersOf,
+  requireRef,
+  toRef,
   toString as boardToString,
   type Digit,
 } from 'engine';
@@ -21,6 +24,7 @@ import {
 import { copy } from '../copy';
 
 import {
+  evidenceCells,
   explanationFor,
   findConflicts,
   gameReducer,
@@ -242,6 +246,34 @@ describe('explicación', () => {
 
     expect(play(explained, FIRST_EMPTY, 5).explain).toBe(false);
     expect(gameReducer(explained, { type: 'hint' }).explain).toBe(false);
+  });
+});
+
+describe('celdas que cita la explicación', () => {
+  test('son las que demuestran el argumento, no las del patrón', () => {
+    const hinted = gameReducer(start(), { type: 'hint' });
+    if (hinted.hint?.kind !== 'found') throw new Error('se esperaba una detección');
+
+    const cells = evidenceCells(hinted.board, hinted.hint);
+    const data = explainData(hinted.board, hinted.hint.detection);
+    if (data.technique !== 'naked-single') throw new Error('el fixture da un naked single');
+
+    // Una por dígito descartado: ocho testigos para un naked single.
+    expect(cells.size).toBe(data.eliminatedBy.length);
+    expect([...cells].map(toRef).sort()).toEqual(
+      data.eliminatedBy.map((evidence) => evidence.at).sort(),
+    );
+    // Y ninguna es del patrón: esas ya llevan el contorno del hint.
+    for (const cell of hinted.hint.cells) expect(cells.has(cell)).toBe(false);
+    // Cada testigo tiene de verdad el dígito que dice bloquear.
+    for (const evidence of data.eliminatedBy) {
+      expect(hinted.board.cells[requireRef(evidence.at)].value).toBe(evidence.digit);
+    }
+  });
+
+  test('sin pista no hay nada que citar', () => {
+    expect(evidenceCells(start().board, null).size).toBe(0);
+    expect(evidenceCells(start().board, { kind: 'conflict' }).size).toBe(0);
   });
 });
 

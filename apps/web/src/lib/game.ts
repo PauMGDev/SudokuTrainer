@@ -15,6 +15,7 @@ import {
   UNIT_SIZE,
   colOf,
   detectNext,
+  explainData,
   formatRefs,
   fromString,
   getCell,
@@ -34,6 +35,7 @@ import {
   type CellRef,
   type Detection,
   type Digit,
+  type ExplainData,
 } from 'engine';
 
 import { copy } from '../copy';
@@ -239,6 +241,50 @@ export function hintMessage(hint: Hint | null): string | null {
 /** Los 81 caracteres del tablero: el formato con el que viaja a /api/explain. */
 export function toWire(board: Board): string {
   return boardToString(board);
+}
+
+/**
+ * Las celdas que la explicación cita como prueba: los testigos que bloquean un
+ * dígito y las celdas donde la técnica elimina candidatos.
+ *
+ * Sale del mismo `explainData` que se le manda al modelo, calculado aquí en el
+ * cliente — es una función pura del engine y no arrastra el solver. Así el
+ * tablero enseña exactamente lo que el texto nombra, sin que el servidor tenga
+ * que devolver nada más ni las dos versiones puedan desincronizarse.
+ *
+ * No incluye las celdas del propio patrón: esas ya las marca el contorno del
+ * hint, y repetir la marca solo restaría claridad a las dos.
+ */
+export function evidenceCells(board: Board, hint: Hint | null): ReadonlySet<CellIndex> {
+  if (hint?.kind !== 'found') return NO_CELLS;
+
+  let data: ExplainData;
+  try {
+    data = explainData(board, hint.detection);
+  } catch {
+    // Si el engine no puede justificar su propia detección, el panel ya degrada
+    // al texto fijo; el tablero, simplemente, no marca nada.
+    return NO_CELLS;
+  }
+
+  const cells: CellRef[] = [];
+  switch (data.technique) {
+    case 'naked-single':
+      cells.push(...data.eliminatedBy.map((evidence) => evidence.at));
+      break;
+    case 'hidden-single':
+      for (const blocked of data.blockedCells) {
+        if (blocked.blockedBy.reason === 'peer') cells.push(blocked.blockedBy.at);
+      }
+      break;
+    case 'naked-pair':
+    case 'pointing-pair':
+      cells.push(...data.eliminations.map((elimination) => elimination.cell));
+      break;
+  }
+
+  const pattern = new Set(hint.cells);
+  return new Set(cells.map(requireRef).filter((cell) => !pattern.has(cell)));
 }
 
 /** Lo que el panel necesita saber de una detección para pintarse. */

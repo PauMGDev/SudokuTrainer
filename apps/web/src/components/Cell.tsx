@@ -21,6 +21,8 @@ interface CellProps {
   readonly peer: boolean;
   /** Forma parte del patrón que señala la última pista. */
   readonly hinted: boolean;
+  /** La explicación abierta la cita como prueba. */
+  readonly evidence: boolean;
   /** Lleva el mismo dígito que la celda seleccionada. */
   readonly sameDigit: boolean;
   /** Repite valor con alguna de sus compañeras de fila, columna o caja. */
@@ -70,6 +72,7 @@ export function Cell({
   selected,
   peer,
   hinted,
+  evidence,
   sameDigit,
   conflict,
   tabbable,
@@ -89,8 +92,15 @@ export function Cell({
       // selección visible, y el anillo nunca desaparece teniendo el foco.
       onFocus={() => onSelect(index)}
       className={[
-        'flex cursor-pointer select-none items-center justify-center border-line font-mono tabular-nums',
-        'text-[clamp(1rem,4.2vw,1.5rem)] outline-none',
+        'relative flex cursor-pointer select-none items-center justify-center border-line font-mono',
+        'tabular-nums text-[clamp(1rem,4.2vw,1.5rem)] outline-none',
+        // La prueba se marca con un punto en la esquina, no con otro fondo ni
+        // otro contorno: los dos canales ya están ocupados por "dónde estás" y
+        // "el patrón", y un tercero encima del mismo sitio no se leería.
+        evidence
+          ? 'after:absolute after:bottom-1 after:right-1 after:h-1.5 after:w-1.5 ' +
+            'after:rounded-full after:bg-accent'
+          : '',
         borders(row, col),
         // La pista es el dato inmutable: máximo contraste. Lo que pone el jugador
         // se distingue por peso y tono, no por color: el color queda reservado
