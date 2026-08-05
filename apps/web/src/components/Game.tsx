@@ -128,46 +128,61 @@ export function Game({ puzzle }: { readonly puzzle: string }) {
       >
         {won ? copy.game.won : ''}
       </p>
-      <Board
-        board={state.board}
-        selected={state.selected}
-        peers={peers}
-        hinted={hinted}
-        sameDigit={sameDigit}
-        conflicts={conflicts}
-        onSelect={handleSelect}
-        onKeyDown={handleKeyDown}
-      />
-      <Keypad
-        onInput={handleInput}
-        notes={state.notes}
-        onToggleNotes={handleToggleNotes}
-        onUndo={handleUndo}
-        canUndo={state.past.length > 0}
-        onHint={handleHint}
-        disabled={state.selected === null}
-      />
-      {/* Una sola línea para lo que la partida tiene que decir: la pista manda
-          sobre el aviso inicial, que solo existe mientras no has tocado nada. */}
-      <p role="status" className="min-h-5 text-center font-mono text-sm text-ink-muted">
-        {hintMessage(state.hint) ?? (state.selected === null ? copy.keypad.hint : '')}
-      </p>
-      {/* Dos pasos, no uno: la pista dice dónde mirar y solo si el jugador
-          insiste se le explica por qué. Este clic es el que cuesta dinero. */}
-      {explanation !== null &&
-        (state.explain ? (
-          <Explanation
-            explanation={explanation}
-            // Sin respuesta todavía; con `error`, el texto de la técnica: peor
-            // que el de Claude, mejor que un panel roto.
-            body={bodyOf(remote, explanation.body)}
-            loading={remote === null}
+      {/* En pantalla ancha, tablero y explicación conviven en dos columnas: leer
+          el porqué obligaba a bajar y perder de vista el tablero justo cuando
+          hay que mirarlo. En móvil se apilan, que es el único orden posible. */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-8">
+        <div className="flex flex-col gap-4 lg:w-[30rem] lg:shrink-0">
+          <Board
+            board={state.board}
+            selected={state.selected}
+            peers={peers}
+            hinted={hinted}
+            sameDigit={sameDigit}
+            conflicts={conflicts}
+            onSelect={handleSelect}
+            onKeyDown={handleKeyDown}
           />
-        ) : (
-          <button type="button" onClick={handleExplain} className={`${BUTTON} text-base`}>
-            {copy.explanation.action}
-          </button>
-        ))}
+          <Keypad
+            onInput={handleInput}
+            notes={state.notes}
+            onToggleNotes={handleToggleNotes}
+            onUndo={handleUndo}
+            canUndo={state.past.length > 0}
+            onHint={handleHint}
+            disabled={state.selected === null}
+          />
+        </div>
+
+        <aside className="flex flex-col gap-4 lg:min-w-0 lg:flex-1">
+          {/* Una sola línea para lo que la partida tiene que decir: la pista
+              manda sobre el aviso inicial, que solo existe mientras no has
+              tocado nada. Centrada en móvil, alineada a la izquierda cuando es
+              la cabecera de la columna. */}
+          <p
+            role="status"
+            className="min-h-5 text-center font-mono text-sm text-ink-muted lg:text-left"
+          >
+            {hintMessage(state.hint) ?? (state.selected === null ? copy.keypad.hint : '')}
+          </p>
+          {/* Dos pasos, no uno: la pista dice dónde mirar y solo si el jugador
+              insiste se le explica por qué. Este clic es el que cuesta dinero. */}
+          {explanation !== null &&
+            (state.explain ? (
+              <Explanation
+                explanation={explanation}
+                // Sin respuesta todavía; con `error`, el texto de la técnica:
+                // peor que el de Claude, mejor que un panel roto.
+                body={bodyOf(remote, explanation.body)}
+                loading={remote === null}
+              />
+            ) : (
+              <button type="button" onClick={handleExplain} className={`${BUTTON} text-base`}>
+                {copy.explanation.action}
+              </button>
+            ))}
+        </aside>
+      </div>
     </div>
   );
 }

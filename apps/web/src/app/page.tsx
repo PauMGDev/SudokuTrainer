@@ -51,8 +51,10 @@ export default async function Page(props: PageProps<'/'>) {
     // recorta por arriba y deja lo cortado fuera del alcance del scroll.
     // El padding inferior respeta la barra de gestos de iOS.
     <main
+      // `max-w-lg` en móvil y tableta; en pantalla ancha se abre para que la
+      // explicación quepa al lado del tablero en vez de debajo.
       className="mx-auto flex min-h-dvh w-full max-w-lg flex-col justify-center-safe gap-5 p-4
-        pb-[max(1rem,env(safe-area-inset-bottom))] sm:gap-6"
+        pb-[max(1rem,env(safe-area-inset-bottom))] sm:gap-6 lg:max-w-4xl"
     >
       {/* Todo en mono: es una app de números, no una portada editorial. */}
       <header className="flex flex-col gap-2">
