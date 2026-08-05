@@ -41,7 +41,7 @@ Pasos pequeños, commits frecuentes. No avanzar de fase con el done anterior en 
 
 ## Fase 6 — Pulido y despliegue
 - [x] 6.1 Diseño final coherente con paumiquel.com (oscuro, cyan, mono en números), mobile. Done: revisión visual.
-- [ ] 6.2 README: qué es, demo, arquitectura, sección "Cost engineering". Done: legible por un tercero.
+- [x] 6.2 README: qué es, demo, arquitectura, sección "Cost engineering". Done: legible por un tercero.
 - [ ] 6.3 Deploy en Vercel + variables de entorno documentadas. Done: URL pública jugable.
 
 ## Bitácora de fricciones del arnés
@@ -119,6 +119,18 @@ repitamos un prompt: es la señal de la siguiente pieza (command, hook, agente).
   misma regla que en 2.2-2.5: la abstracción se paga con el segundo consumidor.
   Señal a vigilar: si 3.3 (estado de victoria) o 4.1 necesitan la misma lectura,
   `findConflicts` sube al engine con su fixture y su test.
+- 2026-08-05 (6.2): el README se escribió en inglés y la bitácora se queda en castellano,
+  a propósito: uno es la vitrina y la otra es el diario. Y las cifras de "Cost
+  engineering" se volvieron a medir sobre el payload actual en vez de copiar las de la
+  bitácora — con la evidencia ubicada, el naked single pasó de 34 a 97 tokens y el
+  hidden single bajó de 208 a 171. Regla aplicada: un número en la vitrina se mide el
+  día que se publica; si no, envejece en silencio y el README acaba mintiendo con
+  precisión de dos decimales.
+- 2026-08-05 (6.2): cada comando del README se ejecutó tal y como está escrito antes de
+  publicarlo, incluida la promesa de que sin `ANTHROPIC_API_KEY` la app sigue jugándose
+  (responde el texto fijo de la técnica) y la del grep de `countSolutions` sobre el
+  bundle. Un README de portfolio se lee ejecutándolo: si el tercero que lo prueba se
+  encalla en el segundo comando, el proyecto ya no habla de ingeniería.
 - 2026-08-05 (riqueza asimétrica de payload): dos bugs factuales seguidos, el mismo
   patrón. El prompt exige evidencia ubicada ("cita la celda y la unidad"), pero el
   payload solo la traía en algunas técnicas: primero faltaba la relación geométrica de
