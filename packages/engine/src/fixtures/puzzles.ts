@@ -62,6 +62,26 @@ export const MULTIPLE_SOLUTIONS = `
 `;
 
 /**
+ * Su único naked single es el 2 de R2C4, elegido porque el testigo del 1 está
+ * empatado: R1C6 solo comparte caja con R2C4, R2C3 comparte fila, y R1C6 va
+ * antes en orden de lectura. Así el tablero separa el desempate por unidad del
+ * desempate por orden, cosa que ningún otro fixture hace. Es
+ * `generate({ seed: 0, difficulty: 'easy' }).puzzle`, o sea el primer tablero
+ * fácil del generador (sale de la semilla 4): un tablero real, no escrito a mano.
+ */
+export const NAKED_SINGLE = `
+  4..8.1...
+  ..1....56
+  .3.4.6...
+  .6.1.8..7
+  ...9.....
+  ...7.3.4.
+  .42...9..
+  .853...6.
+  9........
+`;
+
+/**
  * Contiene un naked pair {7,9} en R8C1 y R9C1, que además comparten caja:
  * el mismo par se ve desde la columna y desde la caja, con eliminaciones
  * distintas en cada una. Es `generate({ seed: 3 }).puzzle`, así que es un

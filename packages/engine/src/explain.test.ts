@@ -6,7 +6,7 @@ import { findNakedPairs } from './detectors/naked-pair';
 import { findNakedSingles } from './detectors/naked-single';
 import { findPointingPairs } from './detectors/pointing-pair';
 import { explainData } from './explain';
-import { CLASSIC, NAKED_PAIR, POINTING_PAIR } from './fixtures/puzzles';
+import { CLASSIC, NAKED_PAIR, NAKED_SINGLE, POINTING_PAIR } from './fixtures/puzzles';
 import { generate } from './generator';
 import { requireRef } from './notation';
 import { DIGITS } from './types';
@@ -16,7 +16,11 @@ describe('explainData', () => {
     expect(fromString(POINTING_PAIR)).toEqual(generate({ seed: 0, difficulty: 'hard' }).puzzle);
   });
 
-  it('naked single: lista los dígitos colocados en fila, columna y caja', () => {
+  it('el fixture del naked single es el tablero que dice ser', () => {
+    expect(fromString(NAKED_SINGLE)).toEqual(generate({ seed: 0, difficulty: 'easy' }).puzzle);
+  });
+
+  it('naked single: da la celda que descarta cada dígito y por qué vía', () => {
     const board = fromString(CLASSIC);
     // El primero de CLASSIC: a R5C5 solo le cabe el 5.
     const detection = findNakedSingles(board)[0];
@@ -25,17 +29,43 @@ describe('explainData', () => {
       technique: 'naked-single',
       cell: 'R5C5',
       place: 5,
-      eliminatedBy: {
-        row: [1, 3, 4, 8],
-        col: [1, 2, 6, 7, 8, 9],
-        // El 8 sale en la fila y en la caja, y se lista en las dos: es el mismo
-        // argumento visto desde dos ángulos.
-        box: [2, 3, 6, 8],
-      },
+      // La fila 5 de CLASSIC es 4..8.3..1 y la columna 5 es 79.6.2.18; la caja 5
+      // no aporta ningún testigo propio, sus únicas celdas llenas están en esa
+      // fila y en esa columna. Todo escrito a mano: es el hecho que el engine
+      // tiene que dar, no algo que se derive de su propia salida.
+      eliminatedBy: [
+        // El 1 está en R5C9 (fila 5) y en R8C5 (columna 5): dos líneas empatadas,
+        // gana el orden de lectura.
+        { digit: 1, at: 'R5C9', via: { kind: 'row', index: 5 } },
+        { digit: 2, at: 'R6C5', via: { kind: 'column', index: 5 } },
+        { digit: 3, at: 'R5C6', via: { kind: 'row', index: 5 } },
+        { digit: 4, at: 'R5C1', via: { kind: 'row', index: 5 } },
+        { digit: 6, at: 'R4C5', via: { kind: 'column', index: 5 } },
+        { digit: 7, at: 'R1C5', via: { kind: 'column', index: 5 } },
+        // Mismo empate que el 1: R5C4 en la fila y R9C5 en la columna.
+        { digit: 8, at: 'R5C4', via: { kind: 'row', index: 5 } },
+        { digit: 9, at: 'R2C5', via: { kind: 'column', index: 5 } },
+      ],
     });
   });
 
-  it('naked single: la unión de las tres unidades son siempre los ocho dígitos restantes', () => {
+  it('naked single: si el testigo comparte línea y otro solo caja, gana la línea', () => {
+    const board = fromString(NAKED_SINGLE);
+    // El único de este fixture: a R2C4 solo le cabe el 2.
+    const data = explainData(board, findNakedSingles(board)[0]);
+    if (data.technique !== 'naked-single') throw new Error(`Esperaba naked-single: ${data.technique}`);
+
+    // El 1 está en tres peers de R2C4: R1C6 (solo caja 2), R2C3 (fila 2) y
+    // R4C4 (columna 4). R1C6 es el primero en orden de lectura, así que si el
+    // desempate fuera solo por índice ganaría la caja.
+    expect(data.eliminatedBy.find((entry) => entry.digit === 1)).toEqual({
+      digit: 1,
+      at: 'R2C3',
+      via: { kind: 'row', index: 2 },
+    });
+  });
+
+  it('naked single: los dígitos descartados son siempre los ocho restantes', () => {
     const board = fromString(CLASSIC);
     const detections = findNakedSingles(board);
     expect(detections.length).toBeGreaterThan(0);
@@ -44,8 +74,10 @@ describe('explainData', () => {
       const data = explainData(board, detection);
       if (data.technique !== 'naked-single') throw new Error(`Esperaba naked-single: ${data.technique}`);
 
-      const union = new Set([...data.eliminatedBy.row, ...data.eliminatedBy.col, ...data.eliminatedBy.box]);
-      expect([...union].sort((a, b) => a - b)).toEqual(DIGITS.filter((digit) => digit !== data.place));
+      const eliminated = new Set(data.eliminatedBy.map((entry) => entry.digit));
+      expect([...eliminated].sort((a, b) => a - b)).toEqual(
+        DIGITS.filter((digit) => digit !== data.place),
+      );
     }
   });
 

@@ -15,7 +15,7 @@
 import { getCell } from './board';
 import type { Detection, Placement } from './detectors/types';
 import { requireRef, toRef, type CellRef } from './notation';
-import type { Board, CellIndex, Digit } from './types';
+import { DIGITS, type Board, type CellIndex, type Digit } from './types';
 import {
   ALL_UNITS,
   BOXES,
@@ -81,15 +81,17 @@ export interface NakedSingleExplain {
   readonly cell: CellRef;
   readonly place: Digit;
   /**
-   * Los dígitos ya colocados en cada unidad de la celda, ascendentes. Un dígito
-   * presente en dos unidades aparece en las dos: la redundancia es deliberada,
-   * es el mismo argumento visto desde dos ángulos y el jugador agradece oír los dos.
+   * Los ocho dígitos que no caben en la celda, ascendentes, cada uno con su
+   * prueba: `at` es la celda que ya lleva ese dígito y `via` la unidad por la
+   * que la celda objetivo la ve. Un dígito suelto no es evidencia —dice QUÉ se
+   * descarta pero no DÓNDE está—, y quien redacta acaba inventándose la
+   * ubicación con tal de escribir la frase.
    */
-  readonly eliminatedBy: {
-    readonly row: readonly Digit[];
-    readonly col: readonly Digit[];
-    readonly box: readonly Digit[];
-  };
+  readonly eliminatedBy: readonly {
+    readonly digit: Digit;
+    readonly at: CellRef;
+    readonly via: UnitRef;
+  }[];
 }
 
 export interface HiddenSingleExplain {
@@ -133,16 +135,6 @@ function toIndices(cells: readonly CellRef[]): CellIndex[] {
   return cells.map(requireRef);
 }
 
-/** Los dígitos ya colocados en la unidad, ascendentes. */
-function placedIn(board: Board, unit: Unit): Digit[] {
-  const digits: Digit[] = [];
-  for (const cell of unit.cells) {
-    const value = getCell(board, cell).value;
-    if (value !== null) digits.push(value);
-  }
-  return digits.sort((a, b) => a - b);
-}
-
 /** Agrupa las eliminaciones por celda, conservando el orden ya normalizado. */
 function groupEliminations(detection: Detection): CellEliminations[] {
   const byCell = new Map<CellRef, Digit[]>();
@@ -164,30 +156,6 @@ function unitContaining(cells: readonly CellIndex[]): Unit | undefined {
   return ALL_UNITS.find((unit) => cells.every((cell) => unit.cells.includes(cell)));
 }
 
-function explainNakedSingle(board: Board, detection: Detection): NakedSingleExplain {
-  const { cell, digit } = requirePlacement(detection);
-  const index = toIndices([cell])[0];
-  const eliminatedBy = {
-    row: placedIn(board, ROWS[rowOf(index)]),
-    col: placedIn(board, COLUMNS[colOf(index)]),
-    box: placedIn(board, BOXES[boxOf(index)]),
-  };
-
-  // El contrato de la técnica: entre las tres unidades tienen que estar los ocho
-  // dígitos que no son la colocación, ni uno menos ni el propio dígito. Si no
-  // cuadra es un bug del detector, y más vale que reviente aquí que llegar mudo
-  // al prompt y que el LLM rellene el hueco inventando.
-  const seen = new Set([...eliminatedBy.row, ...eliminatedBy.col, ...eliminatedBy.box]);
-  if (seen.size !== 8 || seen.has(digit)) {
-    throw new Error(
-      `Naked single incoherente en ${cell}: ${digit} no queda demostrado por ` +
-        `los dígitos ya colocados (${[...seen].sort((a, b) => a - b).join(',')})`,
-    );
-  }
-
-  return Object.freeze({ technique: 'naked-single', cell, place: digit, eliminatedBy });
-}
-
 /**
  * La unidad por la que dos celdas se ven.
  *
@@ -203,17 +171,80 @@ function sharedUnit(a: CellIndex, b: CellIndex): Unit {
   throw new Error(`${toRef(a)} y ${toRef(b)} no comparten fila, columna ni caja`);
 }
 
+/**
+ * El peer que prueba que `digit` no cabe en `cell`, o `undefined` si no lo hay.
+ *
+ * El mismo dígito puede estar en varios peers y solo se nombra uno, así que la
+ * elección la fija el engine y tiene que salir igual en cada llamada: si
+ * dependiera del que redacta, la misma jugada se explicaría distinto dos veces.
+ * Primero gana quien comparte línea, por lo mismo que en `sharedUnit`: "está en
+ * la misma fila" se narra solo y la caja es el argumento de repuesto. Entre dos
+ * de la misma clase gana el de menor índice, que es orden de lectura y el orden
+ * en el que ya viene `peersOf`.
+ */
+function witnessFor(
+  board: Board,
+  cell: CellIndex,
+  digit: Digit,
+): { readonly at: CellIndex; readonly via: Unit } | undefined {
+  let best: { at: CellIndex; via: Unit } | undefined;
+  for (const peer of peersOf(cell)) {
+    if (getCell(board, peer).value !== digit) continue;
+    const via = sharedUnit(cell, peer);
+    if (best === undefined || (best.via.kind === 'box' && via.kind !== 'box')) {
+      best = { at: peer, via };
+    }
+  }
+  return best;
+}
+
+function explainNakedSingle(board: Board, detection: Detection): NakedSingleExplain {
+  const { cell, digit } = requirePlacement(detection);
+  const index = toIndices([cell])[0];
+
+  // Ascendente por dígito porque es como se lee la celda: `DIGITS` ya viene así.
+  const eliminatedBy: NakedSingleExplain['eliminatedBy'][number][] = [];
+  for (const eliminated of DIGITS) {
+    if (eliminated === digit) continue;
+    const witness = witnessFor(board, index, eliminated);
+    // Sin testigo el dígito no está descartado. No se lista a medias: se omite
+    // y lo caza la comprobación de abajo.
+    if (witness === undefined) continue;
+    eliminatedBy.push({
+      digit: eliminated,
+      at: toRef(witness.at),
+      via: toUnitRef(witness.via),
+    });
+  }
+
+  // El contrato de la técnica: los ocho dígitos que no son la colocación tienen
+  // que quedar descartados, cada uno por su testigo. Como el bucle salta el
+  // propio `digit` y recorre `DIGITS` una vez, contar basta para saber que están
+  // todos. Si falta alguno es un bug del detector, y más vale que reviente aquí
+  // que llegar a medias al prompt y que el LLM rellene el hueco inventando.
+  if (eliminatedBy.length !== DIGITS.length - 1) {
+    throw new Error(
+      `Naked single incoherente en ${cell}: ${digit} no queda demostrado por ` +
+        `los dígitos ya colocados (${eliminatedBy.map((e) => e.digit).join(',')})`,
+    );
+  }
+
+  return Object.freeze({ technique: 'naked-single', cell, place: digit, eliminatedBy });
+}
+
 /** Por qué el dígito no cabe en esta celda de la unidad. */
 function blockerFor(board: Board, index: CellIndex, digit: Digit): Blocker {
   const value = getCell(board, index).value;
   if (value !== null) return { reason: 'occupied', digit: value };
-  // `peersOf` viene ascendente, así que ante varios bloqueos gana el de menor
-  // índice: la explicación tiene que ser la misma en cada llamada.
-  const at = peersOf(index).find((peer) => getCell(board, peer).value === digit);
-  if (at === undefined) {
+  // Mismo criterio de testigo que el naked single, a propósito: la afirmación
+  // que se escribe es la misma ("ese dígito ya está ahí, por esta unidad"), y
+  // dos técnicas que la elijan con reglas distintas explicarían el mismo
+  // tablero de dos maneras según por dónde se pregunte.
+  const witness = witnessFor(board, index, digit);
+  if (witness === undefined) {
     throw new Error(`Hidden single incoherente: ${digit} sí cabe en ${toRef(index)}`);
   }
-  return { reason: 'peer', digit, at: toRef(at), via: toUnitRef(sharedUnit(index, at)) };
+  return { reason: 'peer', digit, at: toRef(witness.at), via: toUnitRef(witness.via) };
 }
 
 function explainHiddenSingle(board: Board, detection: Detection): HiddenSingleExplain {
