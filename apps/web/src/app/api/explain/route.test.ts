@@ -276,6 +276,25 @@ describe('techo de la demo', () => {
   });
 });
 
+describe('base de datos caída', () => {
+  test('sin contador no se llama al modelo: se responde el texto de la técnica', async () => {
+    vi.mocked(quota.consumeQuota).mockRejectedValueOnce(new Error('no database'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const response = await post({ puzzle: PUZZLE, patternKey: detection.patternKey });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      technique: detection.technique,
+      explanation: copy.explanation.techniques[detection.technique].body,
+      cached: false,
+      degraded: true,
+    });
+    // Lo importante: sin cuota que contar, no se gasta.
+    expect(explanations.writeExplanation).not.toHaveBeenCalled();
+  });
+});
+
 describe('cookie de sesión', () => {
   test('la primera petición emite una sesión nueva', async () => {
     const response = await post({ puzzle: PUZZLE, patternKey: detection.patternKey });

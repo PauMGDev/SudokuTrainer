@@ -19,8 +19,13 @@
 import { detectAll, explainData, fromString, type Board } from 'engine';
 
 import { copy } from '../../../copy';
-import { findExplanation, saveExplanation, writeExplanation } from '../../../lib/explanations';
-import { consumeQuota, consumeTotal, secondsUntilReset } from '../../../lib/quota';
+import {
+  findExplanation,
+  fixedText,
+  saveExplanation,
+  writeExplanation,
+} from '../../../lib/explanations';
+import { consumeQuota, consumeTotal, secondsUntilReset, type Quota } from '../../../lib/quota';
 import { newSessionId, readSessionId, sessionCookie } from '../../../lib/session';
 
 /** Una `patternKey` real ronda los 80 caracteres; más allá es basura. */
@@ -85,7 +90,25 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  const quota = await consumeQuota(sessionId);
+  // El material pedagógico se calcula aquí, con el tablero delante, y es lo
+  // único que viaja al modelo.
+  const data = explainData(board, detection);
+
+  let quota: Quota;
+  try {
+    quota = await consumeQuota(sessionId);
+  } catch (error) {
+    // Sin base de datos no hay contador, y sin contador no hay techo de gasto:
+    // llamar a Claude a ciegas sería la peor manera de "degradar con elegancia".
+    // Se responde el texto fijo de la técnica, que no cuesta nada y se lee.
+    console.error('No se pudo contar la cuota; se responde sin llamar al modelo:', error);
+    const fixed = fixedText(data.technique);
+    return Response.json(
+      { technique: fixed.technique, explanation: fixed.text, cached: false, degraded: true },
+      { headers },
+    );
+  }
+
   if (!quota.allowed) {
     return Response.json(
       { error: 'daily_limit', message: copy.explanation.limit(quota.limit) },
@@ -105,11 +128,7 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  // El material pedagógico se calcula aquí, con el tablero delante, y es lo
-  // único que viaja al modelo. `explainData` lanza si la detección no cuadra
-  // con el tablero: eso sería un bug del engine, y vale más un 500 en el log
-  // que una explicación inventada — el panel ya degrada al texto de la técnica.
-  const written = await writeExplanation(explainData(board, detection));
+  const written = await writeExplanation(data);
   await saveExplanation(detection.patternKey, written);
   return Response.json(
     { technique: written.technique, explanation: written.text, cached: false },

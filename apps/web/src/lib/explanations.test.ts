@@ -21,7 +21,7 @@ vi.mock('@anthropic-ai/sdk', () => ({
 // importa aunque estos tests no toquen la caché.
 vi.mock('./db', () => ({ db: () => ({}) }));
 
-const { writeExplanation } = await import('./explanations');
+const { findExplanation, saveExplanation, writeExplanation } = await import('./explanations');
 
 const { puzzle } = generate({ seed: 0, difficulty: 'easy' });
 const detection = detectNext(puzzle);
@@ -134,5 +134,22 @@ describe('writeExplanation', () => {
       technique: detection.technique,
       text: FALLBACK,
     });
+  });
+});
+
+describe('caché con la base de datos caída', () => {
+  // El mock de `./db` devuelve un objeto vacío: cualquier consulta revienta,
+  // que es justo lo que pasa cuando Postgres no responde.
+  test('leer la caché devuelve null en vez de propagar el error', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    expect(await findExplanation('lo que sea')).toBeNull();
+  });
+
+  test('guardar en caché no rompe la respuesta ya redactada', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await expect(saveExplanation('clave', { technique: 'naked-single', text: 'x' })).resolves
+      .toBeUndefined();
   });
 });

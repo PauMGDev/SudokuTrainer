@@ -32,13 +32,28 @@ function cacheKey(patternKey: string): string {
   return `v${PROMPT_VERSION}:${patternKey}`;
 }
 
-/** La explicación guardada para ese patrón, o `null` si es la primera vez. */
+/**
+ * La explicación guardada para ese patrón, o `null` si es la primera vez.
+ *
+ * Una caché caída no es un error de la partida: si la base de datos no responde
+ * se trata como un fallo de acierto y se sigue. Lo que NO se puede seguir sin
+ * base de datos es gastar dinero — de eso se ocupa la cuota, en la route.
+ */
 export async function findExplanation(patternKey: string): Promise<Explanation | null> {
-  const row = await db().explanation.findUnique({
-    where: { patternKey: cacheKey(patternKey) },
-    select: { technique: true, text: true },
-  });
-  return row;
+  try {
+    return await db().explanation.findUnique({
+      where: { patternKey: cacheKey(patternKey) },
+      select: { technique: true, text: true },
+    });
+  } catch (error) {
+    console.error('No se pudo leer la caché de explicaciones:', error);
+    return null;
+  }
+}
+
+/** El texto fijo de la técnica: la respuesta cuando no hay nada mejor que dar. */
+export function fixedText(technique: ExplainData['technique']): Explanation {
+  return { technique, text: copy.explanation.techniques[technique].body };
 }
 
 /**
@@ -50,11 +65,17 @@ export async function saveExplanation(
   patternKey: string,
   explanation: Explanation,
 ): Promise<void> {
-  await db().explanation.upsert({
-    where: { patternKey: cacheKey(patternKey) },
-    create: { patternKey: cacheKey(patternKey), ...explanation },
-    update: {},
-  });
+  try {
+    await db().explanation.upsert({
+      where: { patternKey: cacheKey(patternKey) },
+      create: { patternKey: cacheKey(patternKey), ...explanation },
+      update: {},
+    });
+  } catch (error) {
+    // Guardar es una optimización, no parte de la respuesta: la explicación ya
+    // está escrita y pagada, y perderla solo significa pagarla otra vez.
+    console.error('No se pudo guardar la explicación en caché:', error);
+  }
 }
 
 /** El texto fijo de la técnica: lo que se responde cuando Claude no está. */
