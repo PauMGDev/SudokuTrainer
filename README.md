@@ -72,6 +72,10 @@ explanations are never paid for at all:
 - **The daily limit counts writes, not requests.** A cache hit costs nothing, so
   it does not consume quota — a player who keeps meeting familiar patterns can
   play all day. The limit protects the expensive path only.
+- **Two limits, because one of them is a cookie.** The per-session limit orders
+  normal use; a global daily cap (`EXPLAIN_DAILY_TOTAL`) is what actually bounds
+  the bill, since an anonymous session is a cookie and a cookie can be deleted.
+  Past the cap the board keeps working and the commentary stops.
 - **Degrade, never break.** No API key, a failed call, or an empty response falls
   back to a fixed description of the technique. The explanation gets worse; the
   game keeps working.

@@ -20,7 +20,7 @@ import { detectAll, explainData, fromString, type Board } from 'engine';
 
 import { copy } from '../../../copy';
 import { findExplanation, saveExplanation, writeExplanation } from '../../../lib/explanations';
-import { consumeQuota, secondsUntilReset } from '../../../lib/quota';
+import { consumeQuota, consumeTotal, secondsUntilReset } from '../../../lib/quota';
 import { newSessionId, readSessionId, sessionCookie } from '../../../lib/session';
 
 /** Una `patternKey` real ronda los 80 caracteres; más allá es basura. */
@@ -89,6 +89,18 @@ export async function POST(request: Request): Promise<Response> {
   if (!quota.allowed) {
     return Response.json(
       { error: 'daily_limit', message: copy.explanation.limit(quota.limit) },
+      { status: 429, headers: { ...headers, 'retry-after': String(secondsUntilReset()) } },
+    );
+  }
+
+  // Y el techo de toda la demo. La cuota por sesión ordena el uso normal; esta
+  // pone el suelo del abuso, porque una sesión anónima es una cookie y una
+  // cookie se borra. Se descuenta después: quien ya agotó la suya no gasta del
+  // bote común.
+  const total = await consumeTotal();
+  if (!total.allowed) {
+    return Response.json(
+      { error: 'service_limit', message: copy.explanation.serviceLimit },
       { status: 429, headers: { ...headers, 'retry-after': String(secondsUntilReset()) } },
     );
   }

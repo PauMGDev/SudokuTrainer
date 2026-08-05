@@ -76,6 +76,10 @@ export const copy = {
     label: 'Explanation',
     loading: 'Writing the explanation…',
     pattern: (refs: string): string => `Pattern: ${refs}`,
+    /** 429 del techo de la demo entera: no es culpa de quien lo lee. */
+    serviceLimit:
+      "The demo has written today's budget of explanations. The board still works: " +
+      'keep solving, and come back tomorrow for the commentary.',
     /** 429: el límite es de explicaciones, no de partidas — eso hay que decirlo. */
     limit: (limit: number): string =>
       `That is ${limit} explanations for today. The board is still yours: keep solving, ` +

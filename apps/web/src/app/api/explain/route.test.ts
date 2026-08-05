@@ -41,6 +41,11 @@ vi.mock('../../../lib/quota', async () => {
 
   return {
     ...actual,
+    consumeTotal: vi.fn((limit: number = actual.dailyTotal()) => {
+      const next = (used.get('__all__') ?? 0) + 1;
+      used.set('__all__', next);
+      return Promise.resolve({ allowed: next <= limit, used: next, limit });
+    }),
     consumeQuota: vi.fn((sessionId: string, limit: number = actual.dailyLimit()) => {
       const next = (used.get(sessionId) ?? 0) + 1;
       used.set(sessionId, next);
@@ -58,6 +63,7 @@ const used = (quota as unknown as { __used: Map<string, number> }).__used;
 beforeEach(() => {
   store.clear();
   used.clear();
+  vi.unstubAllEnvs();
   vi.mocked(explanations.writeExplanation).mockClear();
 });
 
@@ -237,6 +243,36 @@ describe('cuota diaria', () => {
 
     expect((await post(DISTINCT[LIMIT], 'sid=uno')).status).toBe(429);
     expect((await post(DISTINCT[LIMIT], 'sid=dos')).status).toBe(200);
+  });
+});
+
+describe('techo de la demo', () => {
+  test('agotado el bote común, ninguna sesión redacta ya', async () => {
+    // Con el tope real harían falta 200 patrones distintos; lo que se prueba es
+    // la regla, no el número, y el número es configurable justo para esto.
+    vi.stubEnv('EXPLAIN_DAILY_TOTAL', '3');
+
+    // Una sesión distinta por petición: la cuota individual nunca se agota, que
+    // es justo el abuso contra el que existe este techo.
+    for (let i = 0; i < 3; i += 1) {
+      expect((await post(DISTINCT[i], `sid=abusador-${i}`)).status).toBe(200);
+    }
+
+    const rejected = await post(DISTINCT[3], 'sid=recien-llegado');
+    expect(rejected.status).toBe(429);
+    expect(await rejected.json()).toEqual({
+      error: 'service_limit',
+      message: copy.explanation.serviceLimit,
+    });
+  });
+
+  test('el techo no se toca cuando la respuesta sale de caché', async () => {
+    await post(DISTINCT[0], 'sid=uno');
+    const before = used.get('__all__');
+
+    await post(DISTINCT[0], 'sid=otro-cualquiera');
+
+    expect(used.get('__all__')).toBe(before);
   });
 });
 
