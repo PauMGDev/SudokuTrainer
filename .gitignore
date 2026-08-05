@@ -21,3 +21,9 @@ coverage/
 # OS / editor
 .DS_Store
 *.log
+.vercel
+
+# Skills que la integración de Neon instala en el proyecto (no son código nuestro)
+.agents/
+apps/web/.claude/
+skills-lock.json
