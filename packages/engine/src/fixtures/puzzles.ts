@@ -79,6 +79,24 @@ export const NAKED_PAIR = `
   .8......6
 `;
 
+/**
+ * Contiene un pointing pair del 1 en la caja 6: dentro de la caja el 1 solo cabe
+ * en R4C7 y R4C9, que comparten fila, así que queda descartado en el resto de la
+ * fila 4. Es `generate({ seed: 0, difficulty: 'hard' }).puzzle`, es decir el
+ * primer tablero difícil que da el generador: un tablero real, no escrito a mano.
+ */
+export const POINTING_PAIR = `
+  .....8.13
+  5.8....4.
+  .1.6.....
+  ..6.2..3.
+  1...6...5
+  ...9..4.2
+  76.......
+  ..4..28..
+  3........
+`;
+
 /** Dos cincos en la primera fila: no hay ninguna solución posible. */
 export const CONTRADICTORY = `
   55..7....

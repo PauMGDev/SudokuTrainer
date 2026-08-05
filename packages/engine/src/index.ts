@@ -95,6 +95,19 @@ export { findNakedPairs, nakedPairDetector } from './detectors/naked-pair';
 export { findPointingPairs, pointingPairDetector } from './detectors/pointing-pair';
 
 export {
+  explainData,
+  type BlockedCell,
+  type Blocker,
+  type CellEliminations,
+  type ExplainData,
+  type HiddenSingleExplain,
+  type NakedPairExplain,
+  type NakedSingleExplain,
+  type PointingPairExplain,
+  type UnitRef,
+} from './explain';
+
+export {
   candidatesFor,
   emptyBoard,
   fromString,
