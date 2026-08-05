@@ -11,7 +11,7 @@ turns that detection into an explanation.
 server re-verifies it, and Claude receives the finished argument and writes it up.
 That split is the whole design, and everything below follows from it.
 
-**Demo:** _pending deploy_
+**Demo:** https://sudoku-trainer-mu.vercel.app
 
 **Stack:** TypeScript · Next.js 16 · React 19 · Tailwind 4 · Prisma 7 + Postgres ·
 Vitest · Anthropic SDK (Claude Haiku 4.5) · pnpm workspaces
@@ -107,6 +107,27 @@ explanations are never paid for at all:
 The same discipline shows up in the board: the client never receives the solution,
 and the solver never reaches the browser bundle (`countSolutions` is absent from
 `.next/static` — a check that runs on every build).
+
+## Deploying
+
+The app is a pnpm workspace: the Vercel project's **Root Directory** is
+`apps/web`, so the install runs at the repo root and the workspace dependency on
+`packages/engine` resolves. Three variables, all server-side:
+
+| Variable | Where it comes from |
+| --- | --- |
+| `DATABASE_URL` | injected by the Neon integration (Vercel Marketplace) |
+| `ANTHROPIC_API_KEY` | yours — never prefixed with `NEXT_PUBLIC_` |
+| `EXPLAIN_DAILY_TOTAL` | the global spend cap for the deployment |
+
+Migrations are applied by hand against the **direct** (unpooled) connection
+string, not during the build: a build that mutates the database is a build you
+cannot re-run safely.
+
+```bash
+vercel env pull .env.production --environment=production
+DATABASE_URL="$DATABASE_URL_UNPOOLED" pnpm --filter web exec prisma migrate deploy
+```
 
 ## Running it locally
 

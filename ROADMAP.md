@@ -48,7 +48,7 @@ estaba equivocado.
 ## Fase 6 — Pulido y despliegue
 - [x] 6.1 Diseño final coherente con paumiquel.com (oscuro, cyan, mono en números), mobile. Done: revisión visual.
 - [x] 6.2 README: qué es, demo, arquitectura, sección "Cost engineering". Done: legible por un tercero.
-- [ ] 6.3 Deploy en Vercel + variables de entorno documentadas. Done: URL pública jugable.
+- [x] 6.3 Deploy en Vercel + variables de entorno documentadas. Done: URL pública jugable.
 
 ## Bitácora
 
@@ -354,6 +354,22 @@ README es la vitrina, esto es el cuaderno.
   (responde el texto fijo de la técnica) y la del grep de `countSolutions` sobre el
   bundle. Un README de portfolio se lee ejecutándolo: si el tercero que lo prueba se
   encalla en el segundo comando, el proyecto ya no habla de ingeniería.
+
+- 2026-08-05 (6.3): el primer despliegue falló con `npm install exited with 1`. Causa: el
+  proyecto se enlazó desde `apps/web`, así que Vercel subía solo esa carpeta y perdía el
+  workspace — `engine` es `workspace:*` y npm no lo resuelve sin la raíz. Arreglo: enlazar
+  desde la raíz del repo y poner `rootDirectory: apps/web` como ajuste del proyecto. Ojo,
+  `rootDirectory` NO es una propiedad válida de `vercel.json` (la documentación del skill
+  de Vercel dice que sí, y el despliegue lo rechaza): se aplica por API. Regla aplicada:
+  en un monorepo, la unidad de despliegue es el repo, no la carpeta de la app.
+- 2026-08-05 (6.3): la base de datos se aprovisionó conectada solo a producción y preview,
+  no a development. Motivo: `vercel env pull` escribe `.env.local`, que en Next tiene
+  prioridad sobre el `.env` de la raíz — con development conectado, un `pull` rutinario
+  habría apuntado `pnpm dev` a la base de producción sin avisar. Señal a vigilar: si algún
+  día hace falta development, que sea una base aparte y nunca la de producción.
+- 2026-08-05 (6.3): las migraciones se aplican a mano contra la conexión directa
+  (`DATABASE_URL_UNPOOLED`), no en el build. Prisma no puede migrar a través del pooler, y
+  un build que muta la base de datos es un build que no se puede repetir sin miedo.
 
 ### Afinado de las explicaciones (tras 6.1)
 
