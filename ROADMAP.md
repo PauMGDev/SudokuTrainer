@@ -119,6 +119,34 @@ repitamos un prompt: es la señal de la siguiente pieza (command, hook, agente).
   misma regla que en 2.2-2.5: la abstracción se paga con el segundo consumidor.
   Señal a vigilar: si 3.3 (estado de victoria) o 4.1 necesitan la misma lectura,
   `findConflicts` sube al engine con su fixture y su test.
+- 2026-08-05 (riqueza asimétrica de payload): dos bugs factuales seguidos, el mismo
+  patrón. El prompt exige evidencia ubicada ("cita la celda y la unidad"), pero el
+  payload solo la traía en algunas técnicas: primero faltaba la relación geométrica de
+  los bloqueos del hidden single, y al arreglarla salió que el naked single daba
+  dígitos sueltos (`row: [1,5,6]`), que el modelo convirtió en celdas inventadas
+  ("2 already at R2C1, R2C5, R2C6"). El modelo no mentía por su cuenta: rellenaba el
+  hueco que el contrato dejaba abierto. Regla nueva, ya en CLAUDE.md: **el contrato de
+  evidencia es uniforme, no por técnica** — si el prompt puede exigir un tipo de
+  afirmación, el payload lo trae para las cuatro. Parchear técnica a técnica es
+  whack-a-mole, y cada parche cuesta un `PROMPT_VERSION` y toda la caché.
+  Corolario que se aplicó de paso: `blockerFor` (hidden single) y `witnessFor` (naked
+  single) elegían testigo con reglas distintas; ahora comparten criterio, porque la
+  frase que se escribe es la misma y dos reglas explicarían el mismo tablero de dos
+  maneras según por dónde se pregunte.
+- 2026-08-05 (riqueza asimétrica de payload): la revisión pedía comprobar si parte de
+  la salida rota venía de caché vieja. No venía: las claves quedaron a la vista en la
+  tabla (`v3:naked-single|cells=R2C4|…` junto a la `v4:` nueva), o sea que el bump del
+  arreglo anterior sí se aplicó y lo que estaba mal era el payload v3, no una respuesta
+  fósil. Efecto secundario visible: las filas de versiones anteriores se quedan ahí,
+  inalcanzables. Señal a vigilar: si eso molesta, la caché quiere una columna de versión
+  y un borrado por versión, no un prefijo en la clave.
+- 2026-08-05 (probe:explain): la verificación pasa a ser una sonda ejecutable
+  (`pnpm probe:explain`, `*.probe.ts` con su propia configuración de Vitest) que imprime
+  las cuatro técnicas con su payload al lado de su explicación. Motivo: los dos bugs se
+  vieron leyendo salidas reales, no ejecutando la suite — ninguna aserción sobre texto
+  no determinista los habría cazado. Queda fuera de `pnpm test` porque cuesta cuatro
+  llamadas reales (~0,004 $). Regla aplicada: lo que solo se detecta mirando, necesita
+  una herramienta que te lo ponga delante para mirarlo.
 - 2026-08-05 (explainData, previo al afinado de Explain): la spec llegó cerrada y la
   implementación contrapropuso tres cosas; la revisión decidió las tres. (1) La unidad
   del naked pair no viaja en la `Detection` y puede encajar en dos unidades a la vez

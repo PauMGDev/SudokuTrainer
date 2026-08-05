@@ -17,6 +17,12 @@ Es un proyecto de portfolio: la demo pública y la legibilidad del repo son el p
 - `ANTHROPIC_API_KEY` existe solo en servidor. Nunca en código cliente ni en `NEXT_PUBLIC_*`.
 - La técnica detectada que envía el cliente se re-verifica en servidor con el engine
   antes de llamar a la API.
+- Contrato de evidencia uniforme: todo tipo de afirmación que el prompt pueda exigir
+  tiene que existir en el payload de TODAS las técnicas, no de algunas. Si el prompt
+  puede pedir "di en qué celda está y por qué unidad", entonces `explainData` da celda
+  y unidad para cada técnica. Donde el payload calla, el modelo rellena — y rellena
+  inventando. Parchear esto técnica a técnica es whack-a-mole: primero faltó la
+  geometría de los bloqueos, luego la ubicación de los dígitos eliminados.
 
 ## Convenciones
 - TypeScript strict. Prohibido `any`: usar `unknown` y narrowing.
