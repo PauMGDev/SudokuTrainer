@@ -55,7 +55,11 @@ export function Board({
       role="grid"
       aria-label={copy.board.label}
       onKeyDown={onKeyDown}
-      className="grid aspect-square w-full grid-cols-9 rounded-sm border-2 border-line"
+      // Las nueve filas se declaran explícitamente. Sin esto, cada fila se
+      // dimensiona por su contenido y una fila entera sin dígitos —normal en un
+      // tablero difícil, o después de borrar— se encoge respecto al resto.
+      className="grid aspect-square w-full grid-cols-9 grid-rows-[repeat(9,minmax(0,1fr))]
+        rounded-sm border-2 border-line"
     >
       {Array.from({ length: UNIT_SIZE }, (_, row) => (
         <div key={row} role="row" className="contents">
