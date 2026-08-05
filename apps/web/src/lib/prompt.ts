@@ -20,10 +20,11 @@ export const MODEL = 'claude-haiku-4-5';
  * Sube cada vez que cambien el payload o el prompt. Forma parte de la clave de
  * caché: una explicación redactada con la versión anterior describe otros datos
  * —la v2 inventaba la geometría de los bloqueos, la v3 inventaba las celdas de
- * los dígitos eliminados— y servirla después de arreglar el prompt sería seguir
- * sirviendo el bug desde disco.
+ * los dígitos eliminados, la v4 enumeraba ocho bloqueos seguidos y no había
+ * quien la leyera— y servirla después de arreglar el prompt sería seguir
+ * sirviendo el problema desde disco.
  */
-export const PROMPT_VERSION = 4;
+export const PROMPT_VERSION = 5;
 
 /** Suficiente para tres frases; si se pasa, es que se ha ido por las ramas. */
 export const MAX_TOKENS = 400;
@@ -45,6 +46,9 @@ export const SYSTEM_PROMPT = [
   '  to bottom.',
   '- Cite the specific evidence: which digits already rule the cell out, which',
   '  cell blocks a candidate. That evidence is why the player learns anything.',
+  '- Group that evidence by unit instead of listing it digit by digit. "Row 7',
+  '  already has 2, 4, 5 and 9 (R7C3, R7C2, R7C4, R7C7)" reads; eight separate',
+  '  clauses do not. Keep every cell reference — just gather them.',
   '- When citing why a cell is blocked, use the via relation verbatim — never',
   '  infer geometry from coordinates.',
   '- If the payload states a digit without a location, never attach one.',
