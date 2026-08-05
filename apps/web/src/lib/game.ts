@@ -117,6 +117,29 @@ function clamp(value: number): number {
   return Math.min(Math.max(value, 0), UNIT_SIZE - 1);
 }
 
+/**
+ * Borra el dígito recién colocado de las notas de sus 20 compañeras.
+ *
+ * En fila, columna Y caja: colocar un 7 invalida la nota del 7 en las tres
+ * unidades por igual, y limpiar solo dos dejaría notas falsas justo donde el
+ * jugador se apoya para razonar. Va dentro del mismo cambio de tablero que la
+ * colocación, así que un solo deshacer devuelve las dos cosas.
+ */
+function clearPeerNotes(board: Board, cell: CellIndex, digit: Digit): Board {
+  let next = board;
+  for (const peer of peersOf(cell)) {
+    const { value, given, candidates } = next.cells[peer];
+    // `setCandidates` lanza sobre una celda con valor o pista: aquí no llegan.
+    if (value !== null || given || !candidates.has(digit)) continue;
+    next = setCandidates(
+      next,
+      peer,
+      [...candidates].filter((candidate) => candidate !== digit),
+    );
+  }
+  return next;
+}
+
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'select': {
@@ -163,7 +186,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       // El engine devuelve el mismo board si el valor no cambia. Cortar aquí
       // ahorra un render y evita ensuciar el historial de deshacer.
       if (board === state.board) return state;
-      return withBoard(state, board);
+      // Borrar (`digit: null`) no invalida ninguna nota: solo colocar lo hace.
+      const cleaned =
+        action.digit === null ? board : clearPeerNotes(board, state.selected, action.digit);
+      return withBoard(state, cleaned);
     }
 
     case 'undo': {

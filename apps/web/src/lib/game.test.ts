@@ -116,6 +116,59 @@ describe('modo notas', () => {
   });
 });
 
+describe('notas que caducan al colocar', () => {
+  /** Una celda vacía y un peer suyo también vacío, para anotar en los dos. */
+  const PEER = peersOf(FIRST_EMPTY).find(
+    (cell) => puzzle.cells[cell].value === null && cell !== FIRST_EMPTY,
+  ) as number;
+  /** Una celda vacía que NO comparte unidad con la primera. */
+  const STRANGER = puzzle.cells.findIndex(
+    (cell, index) =>
+      cell.value === null && index !== FIRST_EMPTY && !peersOf(FIRST_EMPTY).includes(index),
+  );
+
+  /** Anota el mismo dígito en un peer y en una celda ajena. */
+  function noted(digit: Digit): GameState {
+    const notes = gameReducer(start(), { type: 'toggle-notes' });
+    const withPeer = play(notes, PEER, digit);
+    const withStranger = play(withPeer, STRANGER, digit);
+    return gameReducer(withStranger, { type: 'toggle-notes' });
+  }
+
+  test('colocar un dígito borra esa nota en fila, columna y caja', () => {
+    const state = play(noted(5), FIRST_EMPTY, 5);
+
+    expect(state.board.cells[PEER].candidates.has(5)).toBe(false);
+    // La celda que no comparte unidad conserva su nota: el 5 sigue cabiendo ahí.
+    expect(state.board.cells[STRANGER].candidates.has(5)).toBe(true);
+  });
+
+  test('las notas de otros dígitos no se tocan', () => {
+    const notes = gameReducer(start(), { type: 'toggle-notes' });
+    const both = play(play(notes, PEER, 5), PEER, 3);
+    const state = play(gameReducer(both, { type: 'toggle-notes' }), FIRST_EMPTY, 5);
+
+    expect([...state.board.cells[PEER].candidates]).toEqual([3]);
+  });
+
+  test('borrar una celda no caduca ninguna nota', () => {
+    const placed = play(noted(5), FIRST_EMPTY, 5);
+    const erased = play(placed, FIRST_EMPTY, null);
+
+    // Ya estaban borradas por la colocación; borrar el valor no las resucita,
+    // pero tampoco borra ninguna más.
+    expect(erased.board.cells[STRANGER].candidates.has(5)).toBe(true);
+  });
+
+  test('un solo deshacer devuelve el valor y las notas', () => {
+    const before = noted(5);
+    const undone = gameReducer(play(before, FIRST_EMPTY, 5), { type: 'undo' });
+
+    expect(undone.board.cells[FIRST_EMPTY].value).toBeNull();
+    expect(undone.board.cells[PEER].candidates.has(5)).toBe(true);
+  });
+});
+
 describe('deshacer', () => {
   test('devuelve el tablero anterior sin mover la selección', () => {
     const placed = play(start(), FIRST_EMPTY, 5);
