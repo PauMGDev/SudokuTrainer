@@ -19,10 +19,11 @@ export const MODEL = 'claude-haiku-4-5';
 /**
  * Sube cada vez que cambien el payload o el prompt. Forma parte de la clave de
  * caché: una explicación redactada con la versión anterior describe otros datos
- * —o, como en la v2, se inventaba la geometría de los bloqueos— y servirla
- * después de arreglar el prompt sería seguir sirviendo el bug desde disco.
+ * —la v2 inventaba la geometría de los bloqueos, la v3 inventaba las celdas de
+ * los dígitos eliminados— y servirla después de arreglar el prompt sería seguir
+ * sirviendo el bug desde disco.
  */
-export const PROMPT_VERSION = 3;
+export const PROMPT_VERSION = 4;
 
 /** Suficiente para tres frases; si se pasa, es que se ha ido por las ramas. */
 export const MAX_TOKENS = 400;
@@ -46,6 +47,8 @@ export const SYSTEM_PROMPT = [
   '  cell blocks a candidate. That evidence is why the player learns anything.',
   '- When citing why a cell is blocked, use the via relation verbatim — never',
   '  infer geometry from coordinates.',
+  '- If the payload states a digit without a location, never attach one.',
+  '  Locations and units come only from `at` and `via`, verbatim.',
   '- Two or three sentences. Say what the pattern is, why it forces the',
   '  conclusion, and what the player can do with it.',
   '- Address the player as "you". No greetings, no sign-off, no markdown.',

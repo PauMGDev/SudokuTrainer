@@ -78,8 +78,17 @@ describe('prompt', () => {
     expect(prompt).toMatchObject({
       technique: 'naked-single',
       cell: data.technique === 'naked-single' ? data.cell : '',
-      eliminatedBy: { row: expect.any(Array), col: expect.any(Array), box: expect.any(Array) },
+      eliminatedBy: expect.any(Array),
     });
+
+    // Y cada dígito descartado viene con su testigo y su relación: el bug de la
+    // v3 era exactamente esto — dígitos sueltos que el modelo ubicaba a ojo.
+    const { eliminatedBy } = prompt as { eliminatedBy: Record<string, unknown>[] };
+    expect(eliminatedBy.length).toBe(8);
+    for (const evidence of eliminatedBy) {
+      expect(evidence['at']).toMatch(/^R[1-9]C[1-9]$/);
+      expect(evidence['via']).toMatch(/^(row|column|box) [1-9]$/);
+    }
   });
 
   test('el sistema prohíbe resolver y fija la notación', () => {
