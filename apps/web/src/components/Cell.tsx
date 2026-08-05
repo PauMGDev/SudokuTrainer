@@ -99,7 +99,7 @@ export function Cell({
         // "el patrón", y un tercero encima del mismo sitio no se leería.
         evidence
           ? 'after:absolute after:bottom-1 after:right-1 after:h-1.5 after:w-1.5 ' +
-            'after:rounded-full after:bg-accent'
+            'after:rounded-full after:bg-hint'
           : '',
         borders(row, col),
         // La pista es el dato inmutable: máximo contraste. Lo que pone el jugador
@@ -130,16 +130,18 @@ export function Cell({
           : selected
             ? 'bg-accent/10'
             : hinted
-              ? 'bg-accent/15'
+              ? 'bg-hint/15'
               : peer
                 ? 'bg-ink/5'
                 : '',
         selected ? 'z-10 ring-2 ring-inset ring-accent' : '',
         // El hint va por `outline` porque el fondo y el `ring` ya están
         // ocupados: así se sigue viendo sobre la celda seleccionada o en
-        // conflicto. Sólido y en accent, no punteado en accent-deep: pedir
-        // pista y tener que buscar el rastro era el peor de los dos mundos.
-        hinted ? 'z-10 outline-2 -outline-offset-2 outline-accent' : '',
+        // conflicto. Cyan y pegado al borde chocaba con el anillo de selección
+        // —misma banda, mismo color, imposible saber cuál era cuál—, así que
+        // ahora es ámbar y va 4 px hacia dentro: en la celda que es las dos
+        // cosas se leen dos aros concéntricos, cada uno con su significado.
+        hinted ? 'z-10 outline-2 -outline-offset-4 outline-hint' : '',
       ].join(' ')}
     >
       {cell.value ?? (notes.length > 0 ? <Notes candidates={cell.candidates} /> : '')}

@@ -57,6 +57,8 @@ export const copy = {
     difficultyLabel: 'Difficulty',
     difficulty: { easy: 'Easy', medium: 'Medium', hard: 'Hard' },
     newGame: 'New game',
+    /** Marca la acción como acción y no como un cuarto nivel de dificultad. */
+    newGameGlyph: '↻',
     /** Se anuncia solo cuando el tablero está lleno y sin conflictos. */
     won: 'Solved. Every cell checks out.',
   },
@@ -74,6 +76,8 @@ export const copy = {
     /** Segundo paso del flujo: el que en 5.4 gasta una llamada a la API. */
     action: 'Explain',
     label: 'Explanation',
+    /** El panel existe desde el primer segundo: sin pista, dice para qué está. */
+    empty: 'Ask for a hint. The technique that unlocks your next move shows up here.',
     loading: 'Writing the explanation…',
     pattern: (refs: string): string => `Pattern: ${refs}`,
     /** 429 del techo de la demo entera: no es culpa de quien lo lee. */

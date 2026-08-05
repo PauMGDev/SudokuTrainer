@@ -19,7 +19,6 @@ import {
   toWire,
 } from '../lib/game';
 import { Board } from './Board';
-import { BUTTON } from './button';
 import { Explanation } from './Explanation';
 import { Keypad } from './Keypad';
 
@@ -174,22 +173,23 @@ export function Game({ puzzle }: { readonly puzzle: string }) {
           >
             {hintMessage(state.hint) ?? (state.selected === null ? copy.keypad.hint : '')}
           </p>
-          {/* Dos pasos, no uno: la pista dice dónde mirar y solo si el jugador
-              insiste se le explica por qué. Este clic es el que cuesta dinero. */}
-          {explanation !== null &&
-            (state.explain ? (
-              <Explanation
-                explanation={explanation}
-                // Sin respuesta todavía; con `error`, el texto de la técnica:
-                // peor que el de Claude, mejor que un panel roto.
-                body={bodyOf(remote, explanation.body)}
-                loading={remote === null}
-              />
-            ) : (
-              <button type="button" onClick={handleExplain} className={`${BUTTON} text-base`}>
-                {copy.explanation.action}
-              </button>
-            ))}
+          {/* El panel no aparece con la primera pista: está desde el principio y
+              se va llenando. Sin él la columna nacía vacía y la página entera
+              quedaba descuadrada hasta que alguien pedía una pista. */}
+          <Explanation
+            explanation={explanation}
+            body={
+              explanation === null
+                ? copy.explanation.empty
+                : state.explain
+                  ? // Sin respuesta todavía; con `error`, el texto de la técnica:
+                    // peor que el de Claude, mejor que un panel roto.
+                    bodyOf(remote, explanation.body)
+                  : ''
+            }
+            loading={state.explain && explanation !== null && remote === null}
+            onExplain={explanation !== null && !state.explain ? handleExplain : undefined}
+          />
         </aside>
       </div>
     </div>

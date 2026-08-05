@@ -65,7 +65,10 @@ export default async function Page(props: PageProps<'/'>) {
       </header>
 
       {/* En móvil, los tres niveles se reparten la fila y "New game" ocupa la
-          suya: con `flex-wrap` y `ml-auto` quedaba descolgado a media línea. */}
+          suya: con `flex-wrap` y `ml-auto` quedaba descolgado a media línea.
+          En ancho va justo detrás del último nivel, no empujado al extremo
+          derecho: allí flotaba solo, sin nada con lo que alinearse. El glifo y
+          el hueco extra son los que lo separan del grupo de dificultades. */}
       <nav aria-label={copy.game.difficultyLabel} className="flex flex-wrap items-center gap-2">
         {DIFFICULTIES.map((level) => (
           <Link
@@ -79,7 +82,11 @@ export default async function Page(props: PageProps<'/'>) {
             {copy.game.difficulty[level]}
           </Link>
         ))}
-        <Link href={href(difficulty)} className={`${LINK} w-full text-ink-muted sm:ml-auto sm:w-auto`}>
+        <Link
+          href={href(difficulty)}
+          className={`${LINK} w-full gap-2 text-ink-muted sm:ml-2 sm:w-auto`}
+        >
+          <span aria-hidden>{copy.game.newGameGlyph}</span>
           {copy.game.newGame}
         </Link>
       </nav>
