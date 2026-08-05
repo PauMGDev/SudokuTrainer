@@ -119,6 +119,24 @@ repitamos un prompt: es la señal de la siguiente pieza (command, hook, agente).
   misma regla que en 2.2-2.5: la abstracción se paga con el segundo consumidor.
   Señal a vigilar: si 3.3 (estado de victoria) o 4.1 necesitan la misma lectura,
   `findConflicts` sube al engine con su fixture y su test.
+- 2026-08-05 (explainData, previo al afinado de Explain): la spec llegó cerrada y la
+  implementación contrapropuso tres cosas; la revisión decidió las tres. (1) La unidad
+  del naked pair no viaja en la `Detection` y puede encajar en dos unidades a la vez
+  (fila y caja): se pedía `throw`, se propuso desempate determinista, se resolvió
+  distinguiendo los dos casos — empate resuelve por orden fila → columna → caja
+  (sobredeterminación pedagógica, no error), ninguna unidad lanza (detección corrupta).
+  (2) `blockedBy: Digit` perdía el dónde: pasó a ser una unión `occupied | peer`, que
+  además obliga al modelo a escribir la frase correcta en cada caso en vez de adivinar.
+  (3) El coste se aceptó tras medirlo. Patrón que conviene repetir: la spec propone, la
+  implementación contrapropone con argumento, la revisión decide — las tres enmiendas
+  salieron de mirar el código de los detectores, no de opinar sobre la spec.
+- 2026-08-05 (explainData): la estimación de coste del plan (×8 tokens de entrada) era
+  mala. Medido sobre el payload real: naked single 34 tokens, naked pair 51, pointing
+  pair 89, hidden single 189 — frente a los ~40 del formato de tres líneas. El caso caro
+  es el hidden single, que lista las 8 celdas bloqueadas con su motivo; los demás apenas
+  se mueven. Con Haiku sigue siendo ~0,001 $ por explicación y lo absorbe la caché por
+  `patternKey`. Señal a vigilar: el dato entra en la sección "Cost engineering" del
+  README (6.2), y si la caché se versiona por payload habrá que decirlo ahí.
 - 2026-08-04 (6.1): la tipografía se sacó del CSS compilado de paumiquel.com
   (`styles-253EOP2A.css`: DM Sans, JetBrains Mono, DM Serif Display, labels mono en
   versalitas con `tracking .2em`, borde zinc-800 con hover a cyan-400), no de mirar el
