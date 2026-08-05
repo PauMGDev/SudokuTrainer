@@ -13,6 +13,30 @@ That split is the whole design, and everything below follows from it.
 
 **Demo:** _pending deploy_
 
+**Stack:** TypeScript · Next.js 16 · React 19 · Tailwind 4 · Prisma 7 + Postgres ·
+Vitest · Anthropic SDK (Claude Haiku 4.5) · pnpm workspaces
+
+## What it produces
+
+The engine hands the model a finished argument — every digit that rules the cell
+out, the cell that witnesses each one, and the unit they share:
+
+```json
+{"technique":"naked-single","cell":"R2C4","place":2,"eliminatedBy":[
+  {"digit":1,"at":"R2C3","via":"row 2"},{"digit":3,"at":"R8C4","via":"column 4"},
+  {"digit":4,"at":"R3C4","via":"column 4"},{"digit":5,"at":"R2C8","via":"row 2"},
+  {"digit":6,"at":"R2C9","via":"row 2"},{"digit":7,"at":"R6C4","via":"column 4"},
+  {"digit":8,"at":"R1C4","via":"column 4"},{"digit":9,"at":"R5C4","via":"column 4"}]}
+```
+
+> You can place 2 in R2C4 because it's the only candidate left for that cell.
+> Row 2 already contains 1 (at R2C3), 5 (at R2C8), and 6 (at R2C9), while column 4
+> already contains 3 (at R8C4), 4 (at R3C4), 7 (at R6C4), 8 (at R1C4), and 9 (at
+> R5C4) — eliminating all digits except 2.
+
+Every cell and every unit in that sentence came from the payload. The model has
+no board to look at, which is the point: what it cannot see, it cannot invent.
+
 ## How a hint works
 
 1. **Hint** — the engine looks at the current board and returns the simplest
@@ -100,20 +124,27 @@ Without an `ANTHROPIC_API_KEY` everything works except the model's prose: you ge
 the fixed description of each technique instead.
 
 ```bash
-pnpm test                 # engine + web (no API calls, no database)
+pnpm test                 # 216 tests, engine + web. No API calls, no database
 pnpm build
 pnpm probe:explain        # four real Claude calls (~$0.004): payload + output,
                           # side by side, for reading the explanations yourself
 ```
 
-That last one is a tool, not a test. Two factual bugs in the explanations were
-found by reading its output — a model inventing the geometry of a block, and
-inventing the location of an eliminated digit — and neither would have been
+Every technique was written fixture-first: a board that contains the pattern, a
+test with the expected cells written out by hand, and only then the detector.
+Boards that needed verifying were built with the project's own solver rather than
+typed from memory — the first hand-written 17-clue fixture turned out to have no
+unique solution, which is exactly the kind of thing you find out the hard way.
+
+`pnpm probe:explain` is a tool, not a test. Two factual bugs in the explanations
+were found by reading its output — the model inventing the geometry of a block,
+then inventing the location of an eliminated digit — and neither would have been
 caught by asserting on non-deterministic prose.
 
 ## Decisions
 
-`ROADMAP.md` carries a running log of the decisions, measurements and dead ends
-behind each step: why difficulty is measured by required technique instead of
-clue count, why the daily limit counts writes, why the evidence contract has to
-be uniform across techniques. It is the honest version of this README.
+`ROADMAP.md` (in Spanish) is the working log: what was decided, what was measured
+before deciding it, and what went wrong. Why difficulty is measured by the
+technique a board requires instead of by how many clues it has. Why the daily
+limit counts writes. Why the evidence contract has to be uniform across
+techniques — and what the model made up when it wasn't.
