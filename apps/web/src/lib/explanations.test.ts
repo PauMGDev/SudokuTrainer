@@ -4,7 +4,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { detectNext, explainData, generate } from 'engine';
+import { detectAll, detectNext, explainData, generate } from 'engine';
 
 import { copy } from '../copy';
 import { SYSTEM_PROMPT, userPrompt } from './prompt';
@@ -50,6 +50,23 @@ describe('prompt', () => {
     // El tablero son 81 caracteres de dígitos y puntos: si algo así aparece,
     // le estamos dando al modelo material para "resolver" por su cuenta.
     expect(prompt).not.toMatch(/[1-9.]{20,}/);
+  });
+
+  test('las unidades viajan como frase, no como coordenadas', () => {
+    const hidden = detectAll(puzzle).find((d) => d.technique === 'hidden-single');
+    if (hidden === undefined) throw new Error('el fixture debería tener un hidden single');
+    const prompt: unknown = JSON.parse(userPrompt(explainData(puzzle, hidden)));
+
+    // El bug que esto cierra: el modelo se inventaba la geometría del bloqueo.
+    // Ahora la relación viene escrita y en la forma en que hay que decirla.
+    expect(prompt).toMatchObject({ unit: expect.stringMatching(/^(row|column|box) [1-9]$/) });
+    const blocked = (prompt as { blockedCells: { blockedBy: Record<string, unknown> }[] })
+      .blockedCells;
+    const peers = blocked.filter((entry) => entry.blockedBy['reason'] === 'peer');
+    expect(peers.length).toBeGreaterThan(0);
+    for (const entry of peers) {
+      expect(entry.blockedBy['via']).toMatch(/^(row|column|box) [1-9]$/);
+    }
   });
 
   test('lleva las pruebas, no solo la conclusión', () => {

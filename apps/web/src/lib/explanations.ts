@@ -13,17 +13,29 @@ import type { ExplainData } from 'engine';
 
 import { copy } from '../copy';
 import { db } from './db';
-import { MAX_TOKENS, MODEL, SYSTEM_PROMPT, userPrompt } from './prompt';
+import { MAX_TOKENS, MODEL, PROMPT_VERSION, SYSTEM_PROMPT, userPrompt } from './prompt';
 
 export interface Explanation {
   readonly technique: string;
   readonly text: string;
 }
 
+/**
+ * La clave de caché lleva la versión del prompt delante.
+ *
+ * Sin esto, arreglar el prompt no arregla nada para quien ya tiene una
+ * explicación guardada: se le seguiría sirviendo la mala desde disco. Las filas
+ * de versiones anteriores quedan inalcanzables — ocupan sitio y nada más; se
+ * limpian con un `DELETE ... WHERE "patternKey" NOT LIKE 'v3:%'` cuando estorben.
+ */
+function cacheKey(patternKey: string): string {
+  return `v${PROMPT_VERSION}:${patternKey}`;
+}
+
 /** La explicación guardada para ese patrón, o `null` si es la primera vez. */
 export async function findExplanation(patternKey: string): Promise<Explanation | null> {
   const row = await db().explanation.findUnique({
-    where: { patternKey },
+    where: { patternKey: cacheKey(patternKey) },
     select: { technique: true, text: true },
   });
   return row;
@@ -39,8 +51,8 @@ export async function saveExplanation(
   explanation: Explanation,
 ): Promise<void> {
   await db().explanation.upsert({
-    where: { patternKey },
-    create: { patternKey, ...explanation },
+    where: { patternKey: cacheKey(patternKey) },
+    create: { patternKey: cacheKey(patternKey), ...explanation },
     update: {},
   });
 }
