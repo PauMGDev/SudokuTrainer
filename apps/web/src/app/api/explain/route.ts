@@ -16,7 +16,7 @@
  * dinero: los aciertos de caché no consumen nada.
  */
 
-import { detectAll, fromString, type Board } from 'engine';
+import { detectAll, explainData, fromString, type Board } from 'engine';
 
 import { copy } from '../../../copy';
 import { findExplanation, saveExplanation, writeExplanation } from '../../../lib/explanations';
@@ -93,7 +93,11 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  const written = await writeExplanation(detection);
+  // El material pedagógico se calcula aquí, con el tablero delante, y es lo
+  // único que viaja al modelo. `explainData` lanza si la detección no cuadra
+  // con el tablero: eso sería un bug del engine, y vale más un 500 en el log
+  // que una explicación inventada — el panel ya degrada al texto de la técnica.
+  const written = await writeExplanation(explainData(board, detection));
   await saveExplanation(detection.patternKey, written);
   return Response.json(
     { technique: written.technique, explanation: written.text, cached: false },

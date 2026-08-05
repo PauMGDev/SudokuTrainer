@@ -12,7 +12,7 @@
  * que resalta celdas; el panel es el paso en que el jugador pide el porqué.
  */
 
-import type { Detection } from 'engine';
+import type { ExplainData } from 'engine';
 
 export const MODEL = 'claude-haiku-4-5';
 
@@ -22,37 +22,30 @@ export const MAX_TOKENS = 400;
 export const SYSTEM_PROMPT = [
   'You explain sudoku techniques to a player who is learning them.',
   '',
-  'You are given a technique that has already been detected and verified on the',
-  "player's board. Your only job is to explain why it works, in plain language.",
+  'The user message is JSON: a technique that has already been detected and',
+  "verified on the player's board, plus every fact needed to justify it. Your",
+  'only job is to turn that into an explanation in plain language.',
   '',
   'Rules:',
   '- Never solve the puzzle, look for other moves, or question the detection.',
   '  What you are given is true. Explain that, and nothing else.',
-  '- Use only the cells and digits provided. Never mention a cell that is not',
-  '  in the data.',
-  '- Always name cells in R#C# notation (R1C1 is the top-left corner).',
+  '- Use only what the JSON contains. Never mention a cell, digit or unit that',
+  '  is not in it, and never claim a reason the data does not state.',
+  '- Cells are R#C# (R1C1 is the top-left corner). Units read as "row 4",',
+  '  "column 7", "box 6" — the index is 1-based, boxes go left to right and top',
+  '  to bottom.',
+  '- Cite the specific evidence: which digits already rule the cell out, which',
+  '  cell blocks a candidate. That evidence is why the player learns anything.',
   '- Two or three sentences. Say what the pattern is, why it forces the',
   '  conclusion, and what the player can do with it.',
   '- Address the player as "you". No greetings, no sign-off, no markdown.',
 ].join('\n');
 
-/** Los datos de la detección, tal y como los ve el modelo. */
-export function userPrompt(detection: Detection): string {
-  const lines = [
-    `Technique: ${detection.technique}`,
-    `Pattern cells: ${detection.cells.join(', ')}`,
-    `Digits involved: ${detection.digits.join(', ')}`,
-  ];
-
-  if (detection.placements.length > 0) {
-    const placements = detection.placements.map((p) => `${p.cell} is ${p.digit}`);
-    lines.push(`Conclusion: ${placements.join('; ')}`);
-  }
-
-  if (detection.eliminations.length > 0) {
-    const eliminations = detection.eliminations.map((e) => `${e.digit} cannot go in ${e.cell}`);
-    lines.push(`Conclusion: ${eliminations.join('; ')}`);
-  }
-
-  return lines.join('\n');
+/**
+ * Los datos de la detección, tal y como los ve el modelo: el payload del engine
+ * serializado y sin adornos. JSON compacto a propósito — el modelo lo lee igual
+ * y cada salto de línea son tokens que se pagan en cada explicación nueva.
+ */
+export function userPrompt(data: ExplainData): string {
+  return JSON.stringify(data);
 }

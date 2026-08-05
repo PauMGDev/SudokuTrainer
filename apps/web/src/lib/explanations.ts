@@ -9,7 +9,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
-import type { Detection } from 'engine';
+import type { ExplainData } from 'engine';
 
 import { copy } from '../copy';
 import { db } from './db';
@@ -46,10 +46,10 @@ export async function saveExplanation(
 }
 
 /** El texto fijo de la técnica: lo que se responde cuando Claude no está. */
-function fallback(detection: Detection): Explanation {
+function fallback(data: ExplainData): Explanation {
   return {
-    technique: detection.technique,
-    text: copy.explanation.techniques[detection.technique].body,
+    technique: data.technique,
+    text: copy.explanation.techniques[data.technique].body,
   };
 }
 
@@ -61,17 +61,25 @@ function fallback(detection: Detection): Explanation {
  * fallo de red no debe romper una partida — la explicación genérica es peor
  * que la buena, pero infinitamente mejor que un panel roto.
  */
-export async function writeExplanation(detection: Detection): Promise<Explanation> {
+export async function writeExplanation(data: ExplainData): Promise<Explanation> {
+  const request = {
+    model: MODEL,
+    max_tokens: MAX_TOKENS,
+    system: SYSTEM_PROMPT,
+    messages: [{ role: 'user' as const, content: userPrompt(data) }],
+  };
+
+  // TEMPORAL (quitar antes de cerrar la fase 6): el cuerpo exacto que sale
+  // hacia Anthropic. Se imprime antes de mirar la clave, así que también se ve
+  // sin `ANTHROPIC_API_KEY` — y la clave nunca aparece aquí: viaja en una
+  // cabecera que pone el SDK, no en el cuerpo.
+  console.log('[explain] request →', JSON.stringify(request, null, 2));
+
   const apiKey = process.env['ANTHROPIC_API_KEY'];
-  if (apiKey === undefined || apiKey === '') return fallback(detection);
+  if (apiKey === undefined || apiKey === '') return fallback(data);
 
   try {
-    const message = await new Anthropic({ apiKey }).messages.create({
-      model: MODEL,
-      max_tokens: MAX_TOKENS,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: userPrompt(detection) }],
-    });
+    const message = await new Anthropic({ apiKey }).messages.create(request);
 
     // `content` es una unión: solo los bloques de texto son la explicación.
     const text = message.content
@@ -79,12 +87,12 @@ export async function writeExplanation(detection: Detection): Promise<Explanatio
       .join('')
       .trim();
 
-    if (text === '') return fallback(detection);
-    return { technique: detection.technique, text };
+    if (text === '') return fallback(data);
+    return { technique: data.technique, text };
   } catch (error) {
     // El error se registra en servidor y no viaja al cliente: puede llevar
     // detalles de la cuenta, y el jugador no puede hacer nada con ellos.
     console.error('No se pudo redactar la explicación con Claude:', error);
-    return fallback(detection);
+    return fallback(data);
   }
 }
