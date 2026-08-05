@@ -81,12 +81,6 @@ export async function writeExplanation(data: ExplainData): Promise<Explanation> 
     messages: [{ role: 'user' as const, content: userPrompt(data) }],
   };
 
-  // TEMPORAL (quitar antes de cerrar la fase 6): el cuerpo exacto que sale
-  // hacia Anthropic. Se imprime antes de mirar la clave, así que también se ve
-  // sin `ANTHROPIC_API_KEY` — y la clave nunca aparece aquí: viaja en una
-  // cabecera que pone el SDK, no en el cuerpo.
-  console.log('[explain] request →', JSON.stringify(request, null, 2));
-
   const apiKey = process.env['ANTHROPIC_API_KEY'];
   if (apiKey === undefined || apiKey === '') return fallback(data);
 
