@@ -13,3 +13,13 @@ Disallow: /api/
 # de conocerla es leer este archivo. Quien la pida ha leído las normas y ha
 # decidido saltárselas, así que el cortafuegos lo bloquea una hora.
 Disallow: /api/internal/board-export
+
+# Meta rastreó la portada 171 veces por minuto en agosto de 2026, desde una
+# docena de direcciones del mismo rango. `meta-externalagent` es el que
+# recolecta contenido para entrenar modelos; aquí no hay nada que recolectar
+# que no esté ya en el repositorio, y sale caro servirlo.
+User-agent: meta-externalagent
+Disallow: /
+
+User-agent: Meta-ExternalAgent
+Disallow: /
