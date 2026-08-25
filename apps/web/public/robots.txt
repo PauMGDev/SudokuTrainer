@@ -8,3 +8,8 @@
 User-agent: *
 Disallow: /*?
 Disallow: /api/
+
+# Cebo. Esta ruta no existe y no se enlaza desde ninguna parte: la única forma
+# de conocerla es leer este archivo. Quien la pida ha leído las normas y ha
+# decidido saltárselas, así que el cortafuegos lo bloquea una hora.
+Disallow: /api/internal/board-export
