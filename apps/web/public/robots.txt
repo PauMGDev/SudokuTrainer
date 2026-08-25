@@ -1,0 +1,10 @@
+# La portada sin query es la única página que vale la pena indexar.
+#
+# `/?difficulty=X&seed=N` es un tablero concreto, y cada tablero enlaza a la
+# semilla siguiente: seguir esos enlaces es un paseo sin final. Cada paso cuesta
+# una generación de sudoku en servidor, así que un rastreador que los siga
+# quema CPU sin parar. Ahí no hay nada que indexar de todos modos: son
+# variaciones del mismo juego.
+User-agent: *
+Disallow: /*?
+Disallow: /api/

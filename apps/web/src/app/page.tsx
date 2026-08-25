@@ -10,9 +10,25 @@ import { copy } from '../copy';
  * la pierde. Leer `searchParams` hace la página dinámica — `generate` cuesta
  * entre 8 y 330 ms según el nivel (medido con el propio engine), asumible por
  * navegación, y así el solver se queda en servidor y fuera del bundle.
+ *
+ * Ese coste por navegación es asumible mientras quien navega sea una persona.
+ * Un rastreador no navega: sigue todos los enlaces, y como cada tablero enlaza
+ * a la semilla siguiente, el sitio parecía un grafo infinito de páginas caras.
+ * En agosto de 2026 eso agotó la CPU incluida del plan y Vercel pausó la cuenta
+ * entera. De ahí las tres defensas de este archivo y de `public/robots.txt`:
+ * semillas acotadas, tableros cacheados y enlaces que no invitan a seguir.
  */
 
 const DEFAULT_DIFFICULTY: Difficulty = 'easy';
+
+/**
+ * El espacio de semillas se cierra a propósito. Cada partida enlaza a la
+ * siguiente semilla, así que sin tope hay infinitas URL distintas y cada una
+ * cuesta una generación en servidor: un rastreador que siga los enlaces pasea
+ * sin fin quemando CPU. Con el módulo el paseo da la vuelta, el catálogo es
+ * finito —MAX_SEED tableros por nivel— y la caché de abajo lo cubre entero.
+ */
+const MAX_SEED = 1000;
 
 type Param = string | string[] | undefined;
 
@@ -22,7 +38,36 @@ function toDifficulty(param: Param): Difficulty {
 
 function toSeed(param: Param): number {
   const seed = Number(param);
-  return Number.isInteger(seed) && seed >= 0 ? seed : 0;
+  return Number.isInteger(seed) && seed >= 0 ? seed % MAX_SEED : 0;
+}
+
+interface CachedBoard {
+  /** Los 81 caracteres, el formato que necesitará `/api/explain`. */
+  readonly wire: string;
+  /** La semilla que de verdad produjo el tablero, no la que se pidió. */
+  readonly seed: number;
+}
+
+/**
+ * `generate` es determinista: mismos `seed` y `difficulty`, mismo tablero. Como
+ * el catálogo es finito, el mapa se llena con MAX_SEED × niveles entradas de 81
+ * caracteres y a partir de ahí ninguna visita vuelve a pagar la generación.
+ *
+ * Vive en el módulo, o sea por instancia de función: no es un caché compartido
+ * ni pretende serlo, es no repetir el mismo trabajo mientras la instancia siga
+ * viva. Es justo lo que hace falta contra el tráfico que repite URL.
+ */
+const boards = new Map<string, CachedBoard>();
+
+function board(difficulty: Difficulty, seed: number): CachedBoard {
+  const key = `${difficulty}:${seed}`;
+  const cached = boards.get(key);
+  if (cached !== undefined) return cached;
+
+  const generated = generate({ seed, difficulty });
+  const value: CachedBoard = { wire: boardToString(generated.puzzle), seed: generated.seed };
+  boards.set(key, value);
+  return value;
 }
 
 /**
@@ -36,9 +81,7 @@ const LINK =
 export default async function Page(props: PageProps<'/'>) {
   const params = await props.searchParams;
   const difficulty = toDifficulty(params.difficulty);
-  const { puzzle, seed } = generate({ seed: toSeed(params.seed), difficulty });
-  // Formato de cable: los 81 caracteres, el mismo que necesitará /api/explain.
-  const wire = boardToString(puzzle);
+  const { wire, seed } = board(difficulty, toSeed(params.seed));
 
   // Se enlaza a la semilla *encontrada* + 1, no a la pedida: pedir un nivel
   // escaso avanza semillas hasta dar con él, y volver a pedir desde la misma
@@ -74,6 +117,10 @@ export default async function Page(props: PageProps<'/'>) {
           <Link
             key={level}
             href={href(level)}
+            // Cada enlace estrena semilla, así que para un rastreador esto no
+            // se acaba nunca. `nofollow` es la señal que dice "no sigas por
+            // aquí"; `robots.txt` lo repite para quien mire ahí primero.
+            rel="nofollow"
             aria-current={level === difficulty ? 'page' : undefined}
             className={`${LINK} flex-1 sm:flex-none ${
               level === difficulty ? 'border-accent text-accent' : 'text-ink-muted'
@@ -84,6 +131,7 @@ export default async function Page(props: PageProps<'/'>) {
         ))}
         <Link
           href={href(difficulty)}
+          rel="nofollow"
           className={`${LINK} w-full gap-2 text-ink-muted sm:ml-2 sm:w-auto`}
         >
           <span aria-hidden>{copy.game.newGameGlyph}</span>
