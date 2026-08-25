@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { DIFFICULTIES, type Difficulty } from 'engine';
 
 import { Game } from './Game';
+import { StripQuery } from './StripQuery';
 import { copy } from '../copy';
 import { board } from '../lib/boards';
 
@@ -91,6 +92,9 @@ export function BoardPage({ difficulty, seed: requested }: BoardPageProps) {
       {/* Sin `key`, navegar cambiaría la prop pero el reducer conservaría el
           tablero anterior: el estado se inicializa una sola vez por montaje. */}
       <Game key={wire} puzzle={wire} />
+
+      {/* Los enlaces antiguos llegan aquí con la query vieja pegada detrás. */}
+      <StripQuery />
     </main>
   );
 }
